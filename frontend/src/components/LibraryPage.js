@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import MusicLibrary from './MusicLibrary';
+import AudioAnalysisCompact from './AudioAnalysisCompact';
 import CatalogInsights from './CatalogInsights';
 import InfluenceGenealogyPanel from './InfluenceGenealogyPanel';
 
@@ -11,6 +12,12 @@ import InfluenceGenealogyPanel from './InfluenceGenealogyPanel';
 const LibraryPage = () => {
   const [activeTab, setActiveTab] = useState('library');
   const [selectedTrack, setSelectedTrack] = useState(null);
+  const [libraryKey, setLibraryKey] = useState(0);
+
+  const handleUploadSuccess = () => {
+    // Force MusicLibrary to re-fetch by changing its key
+    setLibraryKey(prev => prev + 1);
+  };
 
   const tabs = [
     { id: 'library', label: 'Track Library' },
@@ -49,10 +56,16 @@ const LibraryPage = () => {
         {/* Tab Content */}
         <div className="mt-6">
           {activeTab === 'library' && (
-            <MusicLibrary
-              userId="default_user"
-              onTrackSelect={setSelectedTrack}
-            />
+            <div className="space-y-6">
+              <AudioAnalysisCompact
+                onUploadSuccess={handleUploadSuccess}
+              />
+              <MusicLibrary
+                key={libraryKey}
+                userId="default_user"
+                onTrackSelect={setSelectedTrack}
+              />
+            </div>
           )}
 
           {activeTab === 'insights' && (

@@ -7,7 +7,7 @@ import axios from 'axios';
  * Extracts identity signal from codebases — thesis, domain, tools, tone
  * Aesthetic: Minimal, chic, editorial (matches AudioAnalysisCompact)
  */
-const ProjectDNAPanel = ({ onScanComplete }) => {
+const ProjectDNAPanel = ({ embedded = false, onScanComplete }) => {
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'directory'
   const [files, setFiles] = useState([]);
   const [direction, setDirection] = useState('');
@@ -115,14 +115,16 @@ const ProjectDNAPanel = ({ onScanComplete }) => {
   };
 
   return (
-    <div className="card">
+    <div className={embedded ? '' : 'card'}>
       {/* Header */}
-      <div className="mb-6">
-        <h3 className="text-display-md mb-2">Project DNA</h3>
-        <p className="text-body text-brand-secondary">
-          Extract identity signal from your codebase
-        </p>
-      </div>
+      {!embedded && (
+        <div className="mb-6">
+          <h3 className="text-display-md mb-2">Project DNA</h3>
+          <p className="text-body text-brand-secondary">
+            Extract identity signal from your codebase
+          </p>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b border-brand-border">

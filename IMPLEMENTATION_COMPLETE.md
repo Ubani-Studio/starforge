@@ -2,12 +2,12 @@
 
 ## What Was Built
 
-### 🎨 Visual Catalog Strategy: **Use CLAROSA**
+### 🎨 Visual Catalog Strategy: **Use TIZITA**
 
-**Decision:** Connect to your existing CLAROSA photo curation system instead of building new app or linking Midjourney directly.
+**Decision:** Connect to your existing TIZITA photo curation system instead of building new app or linking Midjourney directly.
 
 **Why:**
-- CLAROSA already has Bradley-Terry taste learning
+- TIZITA already has Bradley-Terry taste learning
 - No API limits or external dependencies
 - You control the data
 - Better than generic star ratings
@@ -15,7 +15,7 @@
 
 **Midjourney Flow:**
 ```
-Midjourney Export → Import to CLAROSA → Rank via A/B → Starforge pulls top-rated
+Midjourney Export → Import to TIZITA → Rank via A/B → Starforge pulls top-rated
 ```
 
 ---
@@ -39,12 +39,12 @@ Midjourney Export → Import to CLAROSA → Rank via A/B → Starforge pulls top
 
 ### Backend Services
 
-1. **`backend/src/services/clarosaService.js`**
-   - Connects to CLAROSA API
+1. **`backend/src/services/tizitaService.js`**
+   - Connects to TIZITA API
    - Fetches top-rated images (Bradley-Terry scores)
    - Extracts color palettes
    - Generates visual tone descriptions
-   - Imports Midjourney exports to CLAROSA
+   - Imports Midjourney exports to TIZITA
 
 2. **`backend/src/services/sinkService.js`**
    - Connects to SINK audio processing
@@ -56,9 +56,9 @@ Midjourney Export → Import to CLAROSA → Rank via A/B → Starforge pulls top
 
 3. **`backend/src/server.js` (Updated)**
    - Added 9 new API endpoints:
-     - `/api/clarosa/visual-essence` - Get visual DNA
-     - `/api/clarosa/taste-profile` - Get CLAROSA profile
-     - `/api/clarosa/import-midjourney` - Import MJ images
+     - `/api/tizita/visual-essence` - Get visual DNA
+     - `/api/tizita/taste-profile` - Get TIZITA profile
+     - `/api/tizita/import-midjourney` - Import MJ images
      - `/api/sink/analyze` - Analyze single audio
      - `/api/sink/analyze-batch` - Analyze multiple audio
      - `/api/sink/separate-stems` - Stem separation
@@ -67,7 +67,7 @@ Midjourney Export → Import to CLAROSA → Rank via A/B → Starforge pulls top
 ### Frontend Components
 
 4. **`frontend/src/components/TwinGenesisPanelEnhanced.js`**
-   - Quick Sync panel with CLAROSA + SINK buttons
+   - Quick Sync panel with TIZITA + SINK buttons
    - Visual tone display with color swatches
    - Audio DNA display with features
    - Enhanced Twin generation with API calls
@@ -96,11 +96,11 @@ Midjourney Export → Import to CLAROSA → Rank via A/B → Starforge pulls top
 
 ## 🔌 APIs Implemented
 
-### Visual DNA (CLAROSA)
+### Visual DNA (TIZITA)
 
 ```javascript
 // Get visual essence
-GET /api/clarosa/visual-essence?limit=10&min_score=0.7
+GET /api/tizita/visual-essence?limit=10&min_score=0.7
 
 Response:
 {
@@ -167,8 +167,8 @@ cd ~/starforge/frontend
 npm start
 # ✓ Running on http://localhost:3001
 
-# Terminal 3: CLAROSA (if separate service)
-cd ~/clarosa
+# Terminal 3: TIZITA (if separate service)
+cd ~/tizita
 python -m uvicorn main:app --port 8000
 
 # Terminal 4: SINK (if separate service)
@@ -179,7 +179,7 @@ python -m uvicorn main:app --port 8001
 **Current Status:**
 - ✅ Starforge Backend running
 - ✅ Starforge Frontend running (with warnings, functional)
-- ⏸️ CLAROSA (will use fallback if not running)
+- ⏸️ TIZITA (will use fallback if not running)
 - ⏸️ SINK (will use fallback if not running)
 
 ---
@@ -191,7 +191,7 @@ python -m uvicorn main:app --port 8001
 **Flow:**
 
 1. **Quick Sync Panel**
-   - Click "Connect CLAROSA" → Imports visual catalog
+   - Click "Connect TIZITA" → Imports visual catalog
    - Upload audio files → Click "Analyze Audio" → SINK processes
 
 2. **Manual Inputs**
@@ -217,15 +217,15 @@ Twin Generated:
 
 ## 🎯 Design Decisions Explained
 
-### Why CLAROSA for Visuals?
+### Why TIZITA for Visuals?
 
 | Option | Pros | Cons | Decision |
 |--------|------|------|----------|
 | **Midjourney Direct** | Easy | No taste learning, API limits | ❌ Skip |
 | **Star Ratings** | Simple | Less accurate for subjective taste | ❌ Skip |
-| **CLAROSA** | Bradley-Terry learning, you control it | Need to run service | ✅ **Use** |
+| **TIZITA** | Bradley-Terry learning, you control it | Need to run service | ✅ **Use** |
 
-**Verdict:** CLAROSA with optional MJ import
+**Verdict:** TIZITA with optional MJ import
 
 ---
 
@@ -246,7 +246,7 @@ Building a new audio catalog app = **adding tool chaos**.
 
 ### Why Fallback System?
 
-**Problem:** If CLAROSA or SINK aren't running, should Starforge crash?
+**Problem:** If TIZITA or SINK aren't running, should Starforge crash?
 
 **Solution:** Graceful degradation
 - Try API call first
@@ -257,7 +257,7 @@ Building a new audio catalog app = **adding tool chaos**.
 **Example:**
 ```javascript
 try {
-  const data = await clarosaService.getVisualEssence();
+  const data = await tizitaService.getVisualEssence();
 } catch (error) {
   // Fallback
   const data = {
@@ -282,7 +282,7 @@ try {
     │                     │
     ▼                     ▼
 ┌─────────┐          ┌─────────┐
-│CLAROSA  │          │ SINK    │
+│TIZITA  │          │ SINK    │
 │         │          │         │
 │Visual   │          │Audio    │
 │Ranking  │          │Analysis │
@@ -297,9 +297,9 @@ try {
 ### Data Flow
 
 ```
-1. User connects CLAROSA
-   → Starforge calls /api/clarosa/visual-essence
-   → CLAROSA returns top 10 images (score > 0.7)
+1. User connects TIZITA
+   → Starforge calls /api/tizita/visual-essence
+   → TIZITA returns top 10 images (score > 0.7)
    → Extract colors + tags
    → Generate style description
    → Display in UI
@@ -323,7 +323,7 @@ try {
 
 ### Immediate (Optional)
 
-**If CLAROSA/SINK have APIs:**
+**If TIZITA/SINK have APIs:**
 1. Start their services
 2. Test integration
 3. See real data instead of fallbacks
@@ -357,7 +357,7 @@ try {
 ## ✅ Verification Checklist
 
 **Backend:**
-- [x] clarosaService.js created
+- [x] tizitaService.js created
 - [x] sinkService.js created
 - [x] 9 new API endpoints added
 - [x] Axios dependency installed
@@ -386,10 +386,10 @@ try {
 ### What You Have Now
 
 **Starforge = Integration Hub**
-- Connects to CLAROSA (visual catalog with taste learning)
+- Connects to TIZITA (visual catalog with taste learning)
 - Connects to SINK (audio analysis engine)
 - Generates Twin OS from combined DNA
-- Reduces tools from 8+ → 3 (Starforge + CLAROSA + SINK)
+- Reduces tools from 8+ → 3 (Starforge + TIZITA + SINK)
 - No new audio catalog app needed
 - Graceful fallbacks if services unavailable
 
@@ -403,7 +403,7 @@ try {
 
 ## 🌌 The Twin Now Learns From
 
-1. **Visual DNA** (CLAROSA)
+1. **Visual DNA** (TIZITA)
    - Your curated photo collection
    - Bradley-Terry taste rankings
    - Color palettes you gravitate toward

@@ -4,7 +4,7 @@ const fs = require('fs');
 const axios = require('axios');
 const visualDnaCache = require('./visualDnaCache');
 
-const Tizita_API_URL = process.env.Tizita_API_URL || 'http://localhost:8001/api/v1';
+const Tizita_API_URL = process.env.TIZITA_API_URL || process.env.Tizita_API_URL || 'http://localhost:8001/api/v1';
 
 /**
  * Direct Tizita Database Connection
@@ -12,8 +12,8 @@ const Tizita_API_URL = process.env.Tizita_API_URL || 'http://localhost:8001/api/
  */
 class TizitaDirectService {
   constructor() {
-    this.dbPath = process.env.Tizita_DB_PATH || '';
-    this.storagePath = process.env.Tizita_STORAGE || '';
+    this.dbPath = process.env.TIZITA_DB_PATH || process.env.Tizita_DB_PATH || '';
+    this.storagePath = process.env.TIZITA_STORAGE || process.env.Tizita_STORAGE || '';
     this.db = null;
   }
 

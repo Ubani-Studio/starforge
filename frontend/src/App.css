@@ -74,9 +74,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* PRIMARY HEADINGS: Canela (announces, never explains) */
-h1, h2, h3 {
+/* PRIMARY HEADING: Canela (announces, never explains) — H1 ONLY */
+h1 {
   font-family: 'Canela', Georgia, serif;
+}
+
+/* STRUCTURAL HEADINGS: Söhne (labels, not expressive) */
+h2, h3 {
+  font-family: 'Söhne', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* SECONDARY HEADINGS: Söhne (structural labels, not expressive) */

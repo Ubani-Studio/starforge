@@ -2,13 +2,13 @@
 
 ## What's New: Progress Popups
 
-When you click "Connect CLAROSA" or "Analyze Audio", you now see **real-time progress modals** showing what's being analyzed!
+When you click "Connect TIZITA" or "Analyze Audio", you now see **real-time progress modals** showing what's being analyzed!
 
 ---
 
 ## ✨ Features
 
-### CLAROSA Connection Popup
+### TIZITA Connection Popup
 
 **Shows:**
 - ✅ Loading profile (10%)
@@ -19,7 +19,7 @@ When you click "Connect CLAROSA" or "Analyze Audio", you now see **real-time pro
 
 **What You See:**
 ```
-🎨 Connecting to CLAROSA
+🎨 Connecting to TIZITA
 
 Loading your visual catalog and extracting taste profile...
 
@@ -90,14 +90,14 @@ curl http://localhost:3001
 
 ---
 
-### 2. **Test CLAROSA Connection**
+### 2. **Test TIZITA Connection**
 
 1. Go to **Twin Genesis** tab
-2. Click **"Connect CLAROSA"** button
+2. Click **"Connect TIZITA"** button
 3. Watch the popup appear:
    - See progress bar move
    - See each photo load with preview
-   - See your actual photos from `/home/sphinxy/clarosa/backend/storage/photos/`
+   - See your actual photos from `/home/sphinxy/tizita/backend/storage/photos/`
    - See final visual DNA extracted
 
 **Expected Result:**
@@ -136,17 +136,17 @@ Test all endpoints rapidly:
 ```bash
 # Run 10 requests in parallel
 for i in {1..10}; do
-  (curl -s http://localhost:5000/api/deep/clarosa/profile > /dev/null &)
+  (curl -s http://localhost:5000/api/deep/tizita/profile > /dev/null &)
 done
 
 # Check response times
-time curl -s http://localhost:5000/api/deep/clarosa/visual-dna | jq
+time curl -s http://localhost:5000/api/deep/tizita/visual-dna | jq
 
 # Test large photo load
-time curl -s "http://localhost:5000/api/deep/clarosa/top-photos?limit=100" | jq '.count'
+time curl -s "http://localhost:5000/api/deep/tizita/top-photos?limit=100" | jq '.count'
 
 # Test concurrent requests
-ab -n 100 -c 10 http://localhost:5000/api/deep/clarosa/profile
+ab -n 100 -c 10 http://localhost:5000/api/deep/tizita/profile
 ```
 
 ---
@@ -194,7 +194,7 @@ watch -n 1 'ps aux | grep "node.*server.js" | grep -v grep'
 watch -n 1 'ps aux | grep "node.*react-scripts" | grep -v grep'
 
 # Run heavy load
-# Upload 50 photos to CLAROSA connection
+# Upload 50 photos to TIZITA connection
 # Analyze 100 audio tracks
 # Generate 10 Twin profiles
 ```
@@ -203,7 +203,7 @@ watch -n 1 'ps aux | grep "node.*react-scripts" | grep -v grep'
 
 ## 📊 Expected Performance
 
-### CLAROSA Connection
+### TIZITA Connection
 - **Time:** 2-5 seconds
 - **Memory:** ~50MB additional
 - **Photos loaded:** 20-100 depending on limit
@@ -256,14 +256,14 @@ NODE_OPTIONS="--max-old-space-size=2048"
 
 ### Database Locked
 
-**If CLAROSA DB is locked:**
+**If TIZITA DB is locked:**
 ```bash
 # Check for lock file
-ls -la /home/sphinxy/clarosa/backend/clarosa.db*
+ls -la /home/sphinxy/tizita/backend/clarosa.db*
 
 # Remove lock if stuck
-rm /home/sphinxy/clarosa/backend/clarosa.db-shm
-rm /home/sphinxy/clarosa/backend/clarosa.db-wal
+rm /home/sphinxy/tizita/backend/clarosa.db-shm
+rm /home/sphinxy/tizita/backend/clarosa.db-wal
 ```
 
 ---
@@ -293,12 +293,12 @@ rm /home/sphinxy/clarosa/backend/clarosa.db-wal
 ## 📈 Benchmarks
 
 **Your System:**
-- **CLAROSA:** 199 photos, 67% avg score
+- **TIZITA:** 199 photos, 67% avg score
 - **Connection time:** ~3 seconds
 - **Visual DNA:** Generated successfully
 
 **Expected Throughput:**
-- **CLAROSA:** 20 photos/second (loading)
+- **TIZITA:** 20 photos/second (loading)
 - **SINK:** 0.1-0.2 tracks/second (analysis)
 - **Batch:** 5-10 tracks/minute (with parallel=2)
 
@@ -312,8 +312,8 @@ rm /home/sphinxy/clarosa/backend/clarosa.db-wal
 # Install if needed
 sudo apt-get install apache2-utils
 
-# Test CLAROSA endpoint
-ab -n 1000 -c 50 http://localhost:5000/api/deep/clarosa/profile
+# Test TIZITA endpoint
+ab -n 1000 -c 50 http://localhost:5000/api/deep/tizita/profile
 
 # Expected:
 # Time per request: 10-50ms
@@ -332,7 +332,7 @@ async function test() {
   const promises = [];
   for (let i = 0; i < 100; i++) {
     promises.push(
-      axios.get('http://localhost:5000/api/deep/clarosa/profile')
+      axios.get('http://localhost:5000/api/deep/tizita/profile')
     );
   }
 
@@ -352,7 +352,7 @@ EOF
 
 ## ✅ Success Criteria
 
-**CLAROSA Integration:**
+**TIZITA Integration:**
 - [x] Connects in under 5 seconds
 - [x] Shows actual photos with previews
 - [x] Displays real Bradley-Terry scores

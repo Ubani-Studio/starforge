@@ -7,7 +7,7 @@ import axios from 'axios';
  * Combines: Rekordbox import + File upload + Analysis
  * Aesthetic: Minimal, chic, editorial
  */
-const AudioAnalysisCompact = ({ onAnalysisComplete, onRekordboxImport, onUploadSuccess }) => {
+const AudioAnalysisCompact = ({ embedded = false, onAnalysisComplete, onRekordboxImport, onUploadSuccess }) => {
   const [activeTab, setActiveTab] = useState('upload'); // 'upload' or 'rekordbox'
   const [audioFiles, setAudioFiles] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
@@ -187,14 +187,16 @@ const AudioAnalysisCompact = ({ onAnalysisComplete, onRekordboxImport, onUploadS
   };
 
   return (
-    <div className="card">
+    <div className={embedded ? '' : 'card'}>
       {/* Header */}
-      <div className="mb-6">
-        <h3 className="text-display-md mb-2">Audio Analysis</h3>
-        <p className="text-body text-brand-secondary">
-          Import catalog or upload files for deep analysis
-        </p>
-      </div>
+      {!embedded && (
+        <div className="mb-6">
+          <h3 className="text-display-md mb-2">Audio Analysis</h3>
+          <p className="text-body text-brand-secondary">
+            Import catalog or upload files for deep analysis
+          </p>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-4 mb-6 border-b border-brand-border">

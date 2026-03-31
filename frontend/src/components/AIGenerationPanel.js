@@ -6,7 +6,7 @@ import axios from 'axios';
  * Generate content using personal AI twin trained on aesthetic DNA
  * DIFFERENTIATOR: AI trained on YOUR taste, not generic ChatGPT
  */
-const AIGenerationPanel = ({ userId = 'default_user' }) => {
+const AIGenerationPanel = ({ embedded = false, userId = 'default_user' }) => {
   const [activeTab, setActiveTab] = useState('bio');
   const [loading, setLoading] = useState(false);
   const [output, setOutput] = useState(null);
@@ -88,11 +88,15 @@ const AIGenerationPanel = ({ userId = 'default_user' }) => {
   };
 
   return (
-    <div className="card">
-      <h3 className="text-display-md mb-2">AI Generation</h3>
-      <p className="text-body-sm text-brand-secondary mb-6">
-        Personal AI trained on your aesthetic DNA
-      </p>
+    <div className={embedded ? '' : 'card'}>
+      {!embedded && (
+        <>
+          <h3 className="text-display-md mb-2">AI Generation</h3>
+          <p className="text-body-sm text-brand-secondary mb-6">
+            Personal AI trained on your aesthetic DNA
+          </p>
+        </>
+      )}
 
       {/* Tab Navigation */}
       <div className="flex gap-4 mb-6 border-b border-brand-border">

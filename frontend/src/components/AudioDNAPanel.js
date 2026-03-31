@@ -6,18 +6,15 @@ import axios from 'axios';
  * Displays Sonic Palette - the audio equivalent of Visual DNA color palette
  * Shows frequency bands, tonal characteristics, and sonic signature
  */
-const AudioDNAPanel = ({ audioData, rekordboxData, tizitaData }) => {
+const AudioDNAPanel = ({ embedded = false, audioData, rekordboxData, tizitaData }) => {
   const [sonicPalette, setSonicPalette] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [context, setContext] = useState('combined'); // 'combined', 'dj_collection', 'my_music'
 
   useEffect(() => {
-    // Auto-fetch sonic palette when audio data is available
-    if (audioData || rekordboxData) {
-      fetchSonicPalette();
-    }
-  }, [audioData, rekordboxData, context]);
+    fetchSonicPalette();
+  }, [context]);
 
   const fetchSonicPalette = async () => {
     try {
@@ -99,22 +96,24 @@ const AudioDNAPanel = ({ audioData, rekordboxData, tizitaData }) => {
   };
 
   return (
-    <div className="mt-6 border border-brand-border p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="uppercase-label text-brand-text mb-1">Audio DNA</p>
-          <p className="text-body-sm text-brand-secondary">
-            Sonic palette extracted from {sonicPalette.trackCount} tracks
-          </p>
+    <div className={embedded ? '' : 'mt-6 border border-brand-border p-6'}>
+      {!embedded && (
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="uppercase-label text-brand-text mb-1">Audio DNA</p>
+            <p className="text-body-sm text-brand-secondary">
+              Sonic palette extracted from {sonicPalette.trackCount} tracks
+            </p>
+          </div>
+          <button
+            onClick={refreshSonicPalette}
+            disabled={loading}
+            className="text-body-sm text-brand-secondary hover:text-brand-text transition-colors"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
-        <button
-          onClick={refreshSonicPalette}
-          disabled={loading}
-          className="text-body-sm text-brand-secondary hover:text-brand-text transition-colors"
-        >
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </button>
-      </div>
+      )}
 
       {/* Context Filter */}
       {rekordboxData && (

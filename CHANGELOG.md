@@ -4,18 +4,18 @@
 
 ### 🔥 Major Features
 
-#### Deep CLAROSA Integration
-- **Direct database access** to CLAROSA SQLite database
+#### Deep TIZITA Integration
+- **Direct database access** to TIZITA SQLite database
 - Show user's **actual photos** with real Bradley-Terry scores
 - Extract **visual DNA** from user's curated collection
 - Get **curation categories** (highlight, keep, review, delete)
 - Display real **taste profile** with confidence scores
 
 **New Endpoints:**
-- `GET /api/deep/clarosa/profile` - Real user profile & stats
-- `GET /api/deep/clarosa/top-photos` - Actual top-rated photos
-- `GET /api/deep/clarosa/visual-dna` - Complete visual DNA extraction
-- `GET /api/deep/clarosa/curation` - Photos grouped by category
+- `GET /api/deep/tizita/profile` - Real user profile & stats
+- `GET /api/deep/tizita/top-photos` - Actual top-rated photos
+- `GET /api/deep/tizita/visual-dna` - Complete visual DNA extraction
+- `GET /api/deep/tizita/curation` - Photos grouped by category
 
 #### SINK Folder Scanner
 - **Recursive folder scanning** for audio files (1000+ tracks)
@@ -43,7 +43,7 @@
 
 **Backend:**
 - Added `better-sqlite3` for direct database access
-- Created `clarosaServiceDirect.js` - Direct CLAROSA DB queries
+- Created `tizitaServiceDirect.js` - Direct TIZITA DB queries
 - Created `sinkFolderScanner.js` - Recursive audio file scanner with pattern analysis
 - New routes in `/api/deep/` namespace
 - EventEmitter-based progress tracking for async scans
@@ -56,13 +56,13 @@
 
 **Data Flow:**
 ```
-Starforge → CLAROSA DB (SQLite) → Real photos + scores
+Starforge → TIZITA DB (SQLite) → Real photos + scores
 Starforge → Music Folder → SINK Analysis → Pattern Recognition → Musical DNA
 ```
 
 ### 📊 Real Data Integration
 
-**CLAROSA Stats (Example User):**
+**TIZITA Stats (Example User):**
 - 199 photos analyzed
 - 58 highlights (≥80% score)
 - 69 keep (60-80% score)
@@ -90,7 +90,7 @@ Starforge → Music Folder → SINK Analysis → Pattern Recognition → Musical
 
 ### 🐛 Bug Fixes
 
-- Fixed CLAROSA service to handle single-user system (no user_id in photos)
+- Fixed TIZITA service to handle single-user system (no user_id in photos)
 - Fixed score normalization (0-1 scale → 0-100 for display)
 - Added proper error handling for missing databases
 - Fixed tag parsing (JSON vs array)
@@ -124,7 +124,7 @@ const generatedTrack = await audiocraft.generate({
 - Ritual Engine (campaign planning with Full Ritual / Low-Energy modes)
 - Glowline (timeline visualization with phase tracking)
 - Glowmeter (energy capacity management)
-- CLAROSA API integration (surface-level)
+- TIZITA API integration (surface-level)
 - SINK API integration (single file mood analysis)
 - React + Tailwind UI with cosmic minimalism design
 - Node.js + Express backend

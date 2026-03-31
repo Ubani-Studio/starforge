@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
  * Dual-Layer Writing Samples Input
  * Social Posts (70%) + Subconscious Writing (30%)
  */
-const WritingSamplesInput = ({ userId = 'default_user' }) => {
+const WritingSamplesInput = ({ embedded = false, userId = 'default_user' }) => {
   const [socialPosts, setSocialPosts] = useState('');
   const [subconsciousWriting, setSubconsciousWriting] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,13 +70,15 @@ const WritingSamplesInput = ({ userId = 'default_user' }) => {
   const totalChars = socialPosts.length + subconsciousWriting.length;
 
   return (
-    <div className="border border-brand-border p-4 mb-6">
-      <div className="mb-3">
-        <p className="uppercase-label text-brand-secondary mb-1">Train Your Voice</p>
-        <p className="text-body-sm text-brand-muted">
-          Social posts (structure) + raw writing (authenticity) = your voice
-        </p>
-      </div>
+    <div className={embedded ? '' : 'border border-brand-border p-4 mb-6'}>
+      {!embedded && (
+        <div className="mb-3">
+          <p className="uppercase-label text-brand-secondary mb-1">Train Your Voice</p>
+          <p className="text-body-sm text-brand-muted">
+            Social posts (structure) + raw writing (authenticity) = your voice
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Social Posts */}

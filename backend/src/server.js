@@ -61,7 +61,7 @@ const upload = multer({
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Starforge API is running' });
+  res.json({ status: 'ok', message: 'Pweza API is running' });
 });
 
 // Upload files
@@ -495,5 +495,5 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🌌 Starforge API running on port ${PORT}`);
+  console.log(`🐙 Pweza API running on port ${PORT}`);
 });

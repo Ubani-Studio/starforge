@@ -1,23 +1,23 @@
 # 🔥 Starforge Deep Integration Guide
 
-## What's New: Real CLAROSA + SINK Integration
+## What's New: Real TIZITA + SINK Integration
 
 The previous integration was **surface-level** (API calls with fallbacks). This is **deep integration** with:
 
-✅ **Direct CLAROSA database access** - See your actual photos and Bradley-Terry scores
+✅ **Direct TIZITA database access** - See your actual photos and Bradley-Terry scores
 ✅ **Folder scanning** - Analyze entire music catalog (1000+ tracks)
 ✅ **Pattern recognition** - Learn your musical DNA across all tracks
 ✅ **Music generation ready** - Architecture for AudioCraft/Magenta integration
 
 ---
 
-## 🎨 CLAROSA Deep Integration
+## 🎨 TIZITA Deep Integration
 
 ### What You Get Now
 
 **Before (Surface):**
 - Generic API calls
-- Fallback if CLAROSA not running
+- Fallback if TIZITA not running
 - No real data shown
 
 **After (Deep):**
@@ -31,7 +31,7 @@ The previous integration was **surface-level** (API calls with fallbacks). This 
 #### 1. Get Your Real Profile
 
 ```bash
-GET /api/deep/clarosa/profile?user_id=1
+GET /api/deep/tizita/profile?user_id=1
 ```
 
 **Response:**
@@ -67,7 +67,7 @@ GET /api/deep/clarosa/profile?user_id=1
 #### 2. Get Your Top-Rated Photos
 
 ```bash
-GET /api/deep/clarosa/top-photos?user_id=1&limit=20&min_score=70
+GET /api/deep/tizita/top-photos?user_id=1&limit=20&min_score=70
 ```
 
 **Response:**
@@ -78,7 +78,7 @@ GET /api/deep/clarosa/top-photos?user_id=1&limit=20&min_score=70
     {
       "id": 1,
       "file_path": "/storage/photos/abc123.jpg",
-      "clarosa_score": 89.5,
+      "tizita_score": 89.5,
       "global_score_0_100": 75,
       "personal_taste_score_0_100": 92,
       "stars_0_5": 4.5,
@@ -93,7 +93,7 @@ GET /api/deep/clarosa/top-photos?user_id=1&limit=20&min_score=70
 #### 3. Extract Complete Visual DNA
 
 ```bash
-GET /api/deep/clarosa/visual-dna?user_id=1
+GET /api/deep/tizita/visual-dna?user_id=1
 ```
 
 **Response:**
@@ -104,7 +104,7 @@ GET /api/deep/clarosa/visual-dna?user_id=1
     "styleDescription": "refined high-quality aesthetic with portrait, natural-light, minimalist influences",
     "topTags": ["portrait", "natural-light", "minimalist", "warm-tones", "candid"],
     "avgScores": {
-      "clarosa": 73.2,
+      "tizita": 73.2,
       "quality": 81.5,
       "aesthetic": 76.8
     },
@@ -118,7 +118,7 @@ GET /api/deep/clarosa/visual-dna?user_id=1
 #### 4. Get Curation Categories
 
 ```bash
-GET /api/deep/clarosa/curation?user_id=1
+GET /api/deep/tizita/curation?user_id=1
 ```
 
 **Response:**
@@ -328,7 +328,7 @@ Content-Type: application/json
       "confidence": 0.85,
       "photoCount": 203,
       "avgScores": {
-        "clarosa": 73.2,
+        "tizita": 73.2,
         "quality": 81.5
       },
       "topPhotos": [/* 10 photos */]
@@ -359,22 +359,22 @@ Content-Type: application/json
 
 ## 🚀 How to Use
 
-### Step 1: Test CLAROSA Connection
+### Step 1: Test TIZITA Connection
 
 ```bash
-# Check if CLAROSA database exists
-ls -la /home/sphinxy/clarosa/backend/clarosa.db
+# Check if TIZITA database exists
+ls -la /home/sphinxy/tizita/backend/tizita.db
 
 # Test profile endpoint
-curl http://localhost:5000/api/deep/clarosa/profile?user_id=1 | jq
+curl http://localhost:5000/api/deep/tizita/profile?user_id=1 | jq
 ```
 
-**Expected:** Your actual CLAROSA profile data
+**Expected:** Your actual TIZITA profile data
 
 ### Step 2: Test Visual DNA Extraction
 
 ```bash
-curl http://localhost:5000/api/deep/clarosa/visual-dna?user_id=1 | jq
+curl http://localhost:5000/api/deep/tizita/visual-dna?user_id=1 | jq
 ```
 
 **Expected:** Your top photos, tags, and style description
@@ -441,9 +441,9 @@ curl -X POST http://localhost:5000/api/deep/twin/generate-complete \
 Add to `backend/.env`:
 
 ```bash
-# CLAROSA Direct Access
-CLAROSA_DB_PATH=/home/sphinxy/clarosa/backend/clarosa.db
-CLAROSA_STORAGE=/home/sphinxy/clarosa/backend/storage
+# TIZITA Direct Access
+TIZITA_DB_PATH=/home/sphinxy/tizita/backend/tizita.db
+TIZITA_STORAGE=/home/sphinxy/tizita/backend/storage
 
 # SINK Integration
 SINK_PATH=/home/sphinxy/SINK
@@ -463,7 +463,7 @@ User uploads files → Basic analysis → Generic Twin
 
 **New way:**
 ```
-User connects CLAROSA → Pulls 1000+ photos → Extracts visual DNA → Real taste profile
+User connects TIZITA → Pulls 1000+ photos → Extracts visual DNA → Real taste profile
 User scans ~/Music → Analyzes 500+ tracks → Pattern recognition → Musical DNA
 Twin = Visual DNA + Musical DNA + Confidence scores
 ```
@@ -493,7 +493,7 @@ POST /api/deep/sink/generate-music
 
 1. **Test the endpoints** using curl commands above
 2. **Frontend integration** - Build UI for:
-   - Displaying CLAROSA photos in gallery
+   - Displaying TIZITA photos in gallery
    - Showing visual DNA stats
    - Folder browser for SINK
    - Real-time analysis progress
@@ -507,7 +507,7 @@ POST /api/deep/sink/generate-music
 
 | Feature | Surface Integration | Deep Integration |
 |---------|---------------------|------------------|
-| **CLAROSA** | API calls with fallback | Direct database queries |
+| **TIZITA** | API calls with fallback | Direct database queries |
 | **Photo Display** | Generic colors | Your actual photos |
 | **Confidence** | Made up | Real Bradley-Terry scores |
 | **SINK Analysis** | Single files | Entire folders (1000+) |

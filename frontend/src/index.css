@@ -26,25 +26,22 @@
     font-weight: 400; /* Buch */
   }
 
-  /* PRIMARY HEADINGS (H1-H3): Canela - "Where am I?" */
-  h1, h2, h3 {
-    @apply font-display;
+  /* PRIMARY HEADING (H1 only): Canela - "Where am I?" */
+  h1 {
+    @apply font-display text-display-xl;
+    font-weight: 500; /* Medium */
     font-feature-settings: 'liga' 1, 'calt' 1;
   }
 
-  h1 {
-    @apply text-display-xl;
-    font-weight: 500; /* Medium */
-  }
-
+  /* STRUCTURAL HEADINGS (H2-H3): Söhne - "What is this part?" */
   h2 {
-    @apply text-display-lg;
-    font-weight: 500; /* Medium */
+    @apply font-sans text-display-lg;
+    font-weight: 600; /* Halbfett */
   }
 
   h3 {
-    @apply text-display-md;
-    font-weight: 400; /* Regular */
+    @apply font-sans text-display-md;
+    font-weight: 500; /* Medium */
   }
 
   /* SECONDARY HEADINGS (H4-H6): Söhne - "What is this part?" */

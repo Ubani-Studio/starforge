@@ -219,7 +219,7 @@ The `AudioDNAPanel` component now includes a context selector with 4 modes:
 <AudioDNAPanel
   audioData={audioData}
   rekordboxData={rekordboxData}
-  clarosaData={clarosaData}
+  tizitaData={tizitaData}
 />
 ```
 

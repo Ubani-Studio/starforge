@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import CoherenceDashboard from './components/CoherenceDashboard';
-import TwinGenesisPanelChic from './components/TwinGenesisPanelChic';
+import NommoPanel from './components/NommoPanel';
 import LibraryPage from './components/LibraryPage';
 
 function App() {
@@ -18,9 +18,8 @@ function App() {
       <header className="border-b border-brand-border py-8">
         <div className="max-w-container mx-auto px-8">
           <h1 className="text-display-lg text-brand-text">
-            Starforge
+            Pweza
           </h1>
-          <p className="text-body text-brand-secondary mt-1">Don't Grind. Forge.</p>
         </div>
       </header>
 
@@ -56,7 +55,7 @@ function App() {
                 : 'text-brand-secondary hover:text-brand-text'
             }`}
           >
-            Twin Genesis
+            Nommo
           </button>
         </nav>
 
@@ -71,7 +70,7 @@ function App() {
           )}
 
           {activeView === 'genesis' && (
-            <TwinGenesisPanelChic
+            <NommoPanel
               onTwinGenerated={handleTwinGenerated}
             />
           )}

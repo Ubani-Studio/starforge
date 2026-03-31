@@ -1,6 +1,6 @@
 # 🔌 Starforge Integration Guide
 
-## CLAROSA + SINK Integration Complete
+## TIZITA + SINK Integration Complete
 
 This guide explains how Starforge now connects to your existing creative infrastructure.
 
@@ -18,7 +18,7 @@ This guide explains how Starforge now connects to your existing creative infrast
     │                   │
     ▼                   ▼
 ┌─────────┐      ┌─────────┐
-│ CLAROSA │      │  SINK   │
+│ TIZITA │      │  SINK   │
 │ Visual  │      │ Audio   │
 │ Catalog │      │ Analysis│
 └─────────┘      └─────────┘
@@ -26,18 +26,18 @@ This guide explains how Starforge now connects to your existing creative infrast
 
 ---
 
-## 🎨 CLAROSA Integration (Visual DNA)
+## 🎨 TIZITA Integration (Visual DNA)
 
 ### What It Does
-- Connects to your CLAROSA photo curation system
+- Connects to your TIZITA photo curation system
 - Pulls top-rated images (Bradley-Terry scores > 0.7)
 - Extracts color palettes and aesthetic tags
 - Generates "visual tone" description for Twin
 
 ### API Endpoints
 
-#### GET `/api/clarosa/visual-essence`
-Fetches visual DNA from CLAROSA
+#### GET `/api/tizita/visual-essence`
+Fetches visual DNA from TIZITA
 
 **Query Params:**
 - `limit` (optional): Number of images (default: 10)
@@ -50,7 +50,7 @@ Fetches visual DNA from CLAROSA
   "images": [
     {
       "id": 1,
-      "path": "/clarosa/images/sample.jpg",
+      "path": "/tizita/images/sample.jpg",
       "score": 0.85,
       "confidence": 0.92,
       "colorPalette": ["#A882FF", "#26FFE6"],
@@ -67,11 +67,11 @@ Fetches visual DNA from CLAROSA
 }
 ```
 
-#### GET `/api/clarosa/taste-profile`
-Gets user's overall visual taste profile from CLAROSA
+#### GET `/api/tizita/taste-profile`
+Gets user's overall visual taste profile from TIZITA
 
-#### POST `/api/clarosa/import-midjourney`
-Import Midjourney exports into CLAROSA for ranking
+#### POST `/api/tizita/import-midjourney`
+Import Midjourney exports into TIZITA for ranking
 
 **Body:**
 ```json
@@ -85,8 +85,8 @@ Import Midjourney exports into CLAROSA for ranking
 ```jsx
 // In TwinGenesisPanelEnhanced.js
 
-const handleConnectClarosa = async () => {
-  const response = await axios.get('/api/clarosa/visual-essence', {
+const handleConnectTizita = async () => {
+  const response = await axios.get('/api/tizita/visual-essence', {
     params: { limit: 10, min_score: 0.7 }
   });
 
@@ -220,7 +220,7 @@ const handleAnalyzeAudio = async () => {
 
 ### POST `/api/twin/generate-enhanced`
 
-Generates Twin OS using both CLAROSA and SINK data.
+Generates Twin OS using both TIZITA and SINK data.
 
 **Form Data:**
 - `audio[]`: Audio files for analysis
@@ -258,7 +258,7 @@ Generates Twin OS using both CLAROSA and SINK data.
 
     "generatedAt": "2026-02-04T...",
     "sources": {
-      "visual": "clarosa",
+      "visual": "tizita",
       "audio": "sink"
     }
   }
@@ -276,7 +276,7 @@ Located in Twin Genesis, users see:
 ```
 ┌─ Quick Sync ─────────────────────┐
 │                                   │
-│  [🎨 Connect CLAROSA]             │
+│  [🎨 Connect TIZITA]             │
 │      Visual Catalog               │
 │                                   │
 │  [🎵 Analyze Audio]               │
@@ -285,9 +285,9 @@ Located in Twin Genesis, users see:
 └───────────────────────────────────┘
 ```
 
-**After Connecting CLAROSA:**
+**After Connecting TIZITA:**
 ```
-✓ CLAROSA Connected
+✓ TIZITA Connected
 
 Visual Tone: abstract, neon, cosmic aesthetic
 Colors: [#A882FF] [#26FFE6] [#0F0F1A]
@@ -311,8 +311,8 @@ Energy: 78% | Valence: 55% | BPM: 128 | Tracks: 5
 
 2. **Twin Genesis Panel**
 
-3. **Connect CLAROSA**
-   - Click "Connect CLAROSA" button
+3. **Connect TIZITA**
+   - Click "Connect TIZITA" button
    - Visual essence auto-imported
    - See color palette + style description
 
@@ -342,9 +342,9 @@ Energy: 78% | Valence: 55% | BPM: 128 | Tracks: 5
 Add to `backend/.env`:
 
 ```bash
-# CLAROSA Integration
-CLAROSA_URL=http://localhost:8000
-CLAROSA_PATH=/home/sphinxy/clarosa
+# TIZITA Integration
+TIZITA_URL=http://localhost:8000
+TIZITA_PATH=/home/sphinxy/tizita
 
 # SINK Integration
 SINK_URL=http://localhost:8001
@@ -354,11 +354,11 @@ PYTHON_PATH=python3
 
 ### Starting Services
 
-If CLAROSA and SINK have their own servers:
+If TIZITA and SINK have their own servers:
 
 ```bash
-# Terminal 1: CLAROSA
-cd ~/clarosa
+# Terminal 1: TIZITA
+cd ~/tizita
 python -m uvicorn main:app --port 8000
 
 # Terminal 2: SINK
@@ -378,10 +378,10 @@ npm start
 
 ## 🧪 Testing the Integration
 
-### Test CLAROSA Connection
+### Test TIZITA Connection
 
 ```bash
-curl http://localhost:5000/api/clarosa/visual-essence?limit=5
+curl http://localhost:5000/api/tizita/visual-essence?limit=5
 ```
 
 **Expected Response:**
@@ -419,12 +419,12 @@ curl -X POST http://localhost:5000/api/twin/generate-enhanced \
 
 ## 🛠️ Troubleshooting
 
-### CLAROSA Unavailable
+### TIZITA Unavailable
 
-If CLAROSA isn't running, Starforge will:
+If TIZITA isn't running, Starforge will:
 - Use fallback visual data
 - Still function with manual uploads
-- Show warning: "CLAROSA unavailable, using fallback"
+- Show warning: "TIZITA unavailable, using fallback"
 
 **Fallback visual tone:**
 ```json
@@ -453,7 +453,7 @@ If SINK isn't running:
 ### Checking Service Status
 
 ```bash
-# Check CLAROSA
+# Check TIZITA
 curl http://localhost:8000/health
 
 # Check SINK
@@ -469,15 +469,15 @@ curl http://localhost:5000/api/health
 
 ### Phase 2: Direct Database Access
 
-Instead of API calls, query CLAROSA/SINK databases directly:
+Instead of API calls, query TIZITA/SINK databases directly:
 
 ```javascript
-// In clarosaService.js
+// In tizitaService.js
 const { Client } = require('pg');
 
 const client = new Client({
   host: 'localhost',
-  database: 'clarosa',
+  database: 'tizita',
   user: 'user',
   password: 'pass'
 });
@@ -492,10 +492,10 @@ const images = await client.query(`
 
 ### Phase 3: Real-time Sync
 
-WebSocket connection to CLAROSA for live updates:
+WebSocket connection to TIZITA for live updates:
 
 ```javascript
-// When user ranks new image in CLAROSA
+// When user ranks new image in TIZITA
 // Starforge Twin instantly updates
 ```
 
@@ -504,7 +504,7 @@ WebSocket connection to CLAROSA for live updates:
 ```javascript
 // Connect to Midjourney API directly
 const mjImages = await midjourney.getRecentGenerations();
-// Auto-import to CLAROSA
+// Auto-import to TIZITA
 // Auto-update Twin visual DNA
 ```
 
@@ -517,22 +517,22 @@ const mjImages = await midjourney.getRecentGenerations();
 │     User     │
 └──────┬───────┘
        │
-       │ Clicks "Connect CLAROSA"
+       │ Clicks "Connect TIZITA"
        ▼
 ┌──────────────────────────┐
 │ TwinGenesisPanelEnhanced │
 └──────────┬───────────────┘
            │
-           │ GET /api/clarosa/visual-essence
+           │ GET /api/tizita/visual-essence
            ▼
 ┌──────────────────────┐
-│ clarosaService.js    │
+│ tizitaService.js    │
 └──────────┬───────────┘
            │
-           │ Try API call to CLAROSA
+           │ Try API call to TIZITA
            ▼
 ┌──────────────────────┐
-│ CLAROSA              │
+│ TIZITA              │
 │ http://localhost:8000│
 └──────────┬───────────┘
            │
@@ -560,17 +560,17 @@ const mjImages = await midjourney.getRecentGenerations();
 ## 🎯 Summary
 
 **What's Integrated:**
-- ✅ CLAROSA visual catalog connection
+- ✅ TIZITA visual catalog connection
 - ✅ SINK audio analysis
 - ✅ Enhanced Twin generation combining both
 - ✅ Fallback system if services unavailable
-- ✅ Color palette extraction from CLAROSA
+- ✅ Color palette extraction from TIZITA
 - ✅ Mood/BPM/key detection from SINK
 - ✅ Batch audio analysis
 - ✅ Twin profile with confidence scores
 
 **Next Steps:**
-1. Start CLAROSA service (if separate)
+1. Start TIZITA service (if separate)
 2. Start SINK service (if separate)
 3. Test integration via Starforge UI
 4. Generate Twin with full DNA profile

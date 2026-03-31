@@ -79,7 +79,7 @@ All routes integrated with audio database (`starforge_audio.db`).
 
 2. **TwinGenesisPanelChic.js** (MODIFIED)
    - Integrated AudioDNAPanel below AudioAnalysisCompact
-   - Passes audioData, rekordboxData, clarosaData props
+   - Passes audioData, rekordboxData, tizitaData props
    - Seamless visual/audio DNA integration
 
 ### Database Schema (MODIFIED)
@@ -276,7 +276,7 @@ UI buttons added (disabled) with descriptions for future implementation:
 ## 🎨 Design Patterns Used
 
 ### 1. Service Architecture
-- Mirrors `clarosaServiceDirect.js` pattern
+- Mirrors `tizitaServiceDirect.js` pattern
 - Separation of concerns (service → cache → database)
 - Async/await for Python script execution
 - Error handling with fallbacks

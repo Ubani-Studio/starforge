@@ -57,10 +57,10 @@ npm start
 3. Drag & drop `collection.xml`
 4. Wait for import to complete
 
-### 3. Connect CLAROSA (for Cross-Modal Analysis)
+### 3. Connect TIZITA (for Cross-Modal Analysis)
 
-1. Ensure CLAROSA is running at `/home/sphinxy/clarosa`
-2. In Twin Genesis Panel, click "Connect CLAROSA"
+1. Ensure TIZITA is running at `/home/sphinxy/tizita`
+2. In Twin Genesis Panel, click "Connect TIZITA"
 3. Visual DNA will be extracted and cached
 
 ### 4. View Audio DNA

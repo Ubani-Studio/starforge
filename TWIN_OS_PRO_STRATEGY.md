@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Starforge Twin OS will expand from visual aesthetic analysis (CLAROSA) to become the complete aesthetic intelligence platform for creative professionals. This document outlines the strategy to integrate professional DJ metadata and music intelligence into the existing Twin OS platform, creating a defensible Blue Ocean position that no competitor can replicate.
+Starforge Twin OS will expand from visual aesthetic analysis (TIZITA) to become the complete aesthetic intelligence platform for creative professionals. This document outlines the strategy to integrate professional DJ metadata and music intelligence into the existing Twin OS platform, creating a defensible Blue Ocean position that no competitor can replicate.
 
 **Core Value Proposition**: "Rekordbox tells you what you played. Starforge tells you WHO you are."
 
@@ -43,7 +43,7 @@ Elite tastemakers (50,000+ globally) will pay premium prices ($50-180/month) for
 - CREATE: Aesthetic intelligence category
 
 **2. Defensible Moat: Cross-Modal Coherence**
-- Visual DNA (CLAROSA) + Audio DNA = unique dataset
+- Visual DNA (TIZITA) + Audio DNA = unique dataset
 - No competitor has both visual and audio aesthetic data
 - Network effects: more data = better coherence analysis
 - Behavioral data (DJ vs personal music) adds third dimension
@@ -73,7 +73,7 @@ Elite tastemakers (50,000+ globally) will pay premium prices ($50-180/month) for
 **1. Multi-Source Data Integration**
 - Import DJ libraries (Rekordbox, Serato) → behavioral data
 - Upload audio files → sonic analysis (BPM, energy, frequency)
-- Connect CLAROSA → visual aesthetic data (color palette, themes)
+- Connect TIZITA → visual aesthetic data (color palette, themes)
 - Analyze caption samples → linguistic style
 
 **2. Cross-Modal Analysis Pipeline**
@@ -152,7 +152,7 @@ User Data → Sonic Palette Extraction → Genre Matching → Lineage Tracing
 
 **Onboarding (5 minutes)**
 1. Sign up (email + password)
-2. Connect CLAROSA (Visual DNA) - optional
+2. Connect TIZITA (Visual DNA) - optional
 3. Upload 5-10 tracks OR import DJ library
 4. Add caption sample and bio
 5. See initial Twin OS analysis
@@ -960,7 +960,7 @@ Rationale: DJ software already does this well.
 - Backend API framework (Express.js)
 - SQLite database system for audio metadata
 - Frontend React components (AudioAnalysisCompact)
-- Visual DNA integration (CLAROSA service)
+- Visual DNA integration (TIZITA service)
 - Audio file processing pipeline
 
 **Rekordbox Integration**:
@@ -975,7 +975,7 @@ Rationale: DJ software already does this well.
 - Play count tracking
 - Star rating import
 
-**Visual DNA (CLAROSA)**:
+**Visual DNA (TIZITA)**:
 - Photo upload and analysis
 - Color palette extraction
 - Visual characteristics profiling
@@ -1036,7 +1036,7 @@ Rationale: DJ software already does this well.
   - Sonic Palette (5 frequency bands)
   - Genre distribution
   - BPM/energy analysis
-- Visual DNA (CLAROSA photos)
+- Visual DNA (TIZITA photos)
 - Simple Twin OS generation
 - Limited to 500 tracks
 
@@ -1185,7 +1185,7 @@ Rationale: DJ software already does this well.
    - File: `backend/src/services/sinkEnhanced.js` (extend existing)
 
 4. **Sonic Palette Extraction** (from existing plan)
-   - Create sonicPaletteService.js (mirror CLAROSA architecture)
+   - Create sonicPaletteService.js (mirror TIZITA architecture)
    - Create sonic_palette_analyzer.py (Python script)
    - Extract 5 frequency bands:
      - Bass (60-250Hz)
@@ -1313,7 +1313,7 @@ Rationale: DJ software already does this well.
 ### Backend Services (Node.js)
 
 **Existing Services**:
-- `clarosaServiceDirect.js` - Visual DNA extraction (working)
+- `tizitaServiceDirect.js` - Visual DNA extraction (working)
 - `visualDnaCache.js` - Visual DNA caching (working)
 - `sinkEnhanced.js` - Audio analysis (working, needs extension)
 - `rekordboxDatabaseReader.js` - Rekordbox DB reading (blocked by encryption)
@@ -1346,7 +1346,7 @@ Rationale: DJ software already does this well.
 
 **Existing Tables**:
 - `audio_tracks` - Track metadata (working, has musical_context column)
-- `visual_dna_cache` - CLAROSA cache (working)
+- `visual_dna_cache` - TIZITA cache (working)
 - `taste_profiles` - User taste profiles (working)
 
 **New Tables to Create**:
@@ -1689,7 +1689,7 @@ Build a co-evolving AI twin that scales creativity, brand identity, and wellness
 - ✅ Defensible moat (unique dataset: Visual DNA + Audio DNA)
 - ✅ Lower technical complexity
 - ✅ Lower operating costs (no heavy LLM usage)
-- ✅ Proven value (CLAROSA Visual DNA already validated)
+- ✅ Proven value (TIZITA Visual DNA already validated)
 
 **Twin OS Pro Weaknesses**:
 - ❌ Smaller TAM (elite tastemakers only)
@@ -1831,7 +1831,7 @@ Build a co-evolving AI twin that scales creativity, brand identity, and wellness
 - ✅ Feature gating middleware
 - ✅ Influence Genealogy (matching algorithm + tree visualization)
 - ✅ DJ library import (Rekordbox, Serato)
-- ✅ Visual DNA integration (CLAROSA)
+- ✅ Visual DNA integration (TIZITA)
 - ✅ Context Comparison (DJ vs Personal)
 - ✅ Taste Coherence Score
 - ✅ Sonic Palette extraction

@@ -29,7 +29,7 @@
 
 **Twin OS Personal AI:**
 - "Here's content that sounds like YOU"
-- Trained on your 99 analyzed tracks + CLAROSA photos
+- Trained on your 99 analyzed tracks + TIZITA photos
 - Uses aesthetic DNA (BPM, energy, genres, influences, visual themes)
 - Maintains your unique voice
 
@@ -108,8 +108,8 @@ ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxx
 
 # Existing config
 PORT=5000
-CLAROSA_DB_PATH=/home/sphinxy/clarosa/backend/clarosa.db
-CLAROSA_STORAGE=/home/sphinxy/clarosa/backend/storage
+TIZITA_DB_PATH=/home/sphinxy/tizita/backend/clarosa.db
+TIZITA_STORAGE=/home/sphinxy/tizita/backend/storage
 ```
 
 ### Step 3: Restart Backend Server
@@ -139,10 +139,10 @@ pm2 restart starforge-backend
 - Generation completes in 3-5 seconds
 - Output sounds like YOUR aesthetic (not generic AI)
 - References your musical taste (BPM, genres, influences)
-- If CLAROSA connected: References your visual aesthetic too
+- If TIZITA connected: References your visual aesthetic too
 
 **Common errors:**
-- `"Missing visual or audio DNA"` → Upload music tracks and/or connect CLAROSA
+- `"Missing visual or audio DNA"` → Upload music tracks and/or connect TIZITA
 - `"This feature requires pro tier"` → Your default_user is already Elite tier (admin mode enabled)
 - `"API key not configured"` → Add API key to backend/.env and restart server
 
@@ -160,7 +160,7 @@ When you click "Generate", the service:
    - Influence Genealogy → Core influences (Detroit Techno, UK Garage, etc.)
    - Taste Coherence → 60% (moderately focused)
 
-2. **Gets Visual DNA** from CLAROSA (if connected):
+2. **Gets Visual DNA** from TIZITA (if connected):
    - Color palette → 5 dominant colors
    - Palette characteristics → "warm-toned"
    - Dominant themes → Urban, Intimate, Contemplative
@@ -281,7 +281,7 @@ All generations saved to `ai_generations` table:
 - [ ] Backend server restarted after adding API key
 - [ ] Frontend shows "AI Generation" section in Twin Genesis
 - [ ] Music tracks uploaded (99 tracks analyzed)
-- [ ] CLAROSA connected (optional but recommended)
+- [ ] TIZITA connected (optional but recommended)
 - [ ] Generated artist bio - sounds like YOUR aesthetic
 - [ ] Generated social caption - matches your voice
 - [ ] Generated press release - professional, culturally positioned
@@ -294,7 +294,7 @@ All generations saved to `ai_generations` table:
 
 ### "Missing visual or audio DNA"
 → Upload music tracks via "Analyze Audio" section
-→ Connect CLAROSA via "Connect CLAROSA" button (optional)
+→ Connect TIZITA via "Connect TIZITA" button (optional)
 
 ### "This feature requires pro tier"
 → You're already Elite tier (admin mode enabled)
@@ -307,7 +307,7 @@ All generations saved to `ai_generations` table:
 
 ### "Output sounds generic, not like me"
 → Make sure you've uploaded enough tracks (50+ recommended)
-→ Connect CLAROSA for visual context
+→ Connect TIZITA for visual context
 → Try different tones/styles
 → If still generic: fine-tuning needed (Phase 3 feature)
 
