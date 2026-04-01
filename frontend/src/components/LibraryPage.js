@@ -30,10 +30,7 @@ const LibraryPage = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-display-lg text-brand-text mb-2">Music Library</h1>
-          <p className="text-brand-secondary">
-            Your complete catalog with intelligent analysis
-          </p>
+          <h1 className="text-display-xl text-brand-text mb-8">Music Library</h1>
         </div>
 
         {/* Tab Navigation */}
@@ -42,7 +39,7 @@ const LibraryPage = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-3 px-4 text-sm uppercase tracking-wider transition-colors ${
+              className={`pb-3 px-4 text-sm tracking-wider transition-colors ${
                 activeTab === tab.id
                   ? 'text-brand-text border-b-2 border-brand-primary'
                   : 'text-brand-secondary hover:text-brand-text'
@@ -159,7 +156,7 @@ const LibraryPage = () => {
                 </div>
               )}
 
-              {selectedTrack.rekordbox_comments && (
+              {selectedTrack.rekordbox_comments && !selectedTrack.rekordbox_comments.includes('www.mediahuman.com') && (
                 <div>
                   <p className="uppercase-label text-brand-secondary mb-1">Comments</p>
                   <p className="text-body-sm text-brand-text">{selectedTrack.rekordbox_comments}</p>

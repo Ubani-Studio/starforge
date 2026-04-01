@@ -83,6 +83,6 @@
   }
 
   .uppercase-label {
-    @apply text-label uppercase tracking-wider;
+    @apply text-label capitalize tracking-wider;
   }
 }

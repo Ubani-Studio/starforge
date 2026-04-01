@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import HubCard from './HubCard';
 import CollapsibleSection from './CollapsibleSection';
@@ -18,21 +18,109 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
   const [tizitaData, setTizitaData] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [connectingTizita, setConnectingTizita] = useState(false);
+  const [rescanningTizita, setRescanningTizita] = useState(false);
   const [subscriptionTier, setSubscriptionTier] = useState('personal');
   const [usageInfo, setUsageInfo] = useState(null);
   const [totalTracks, setTotalTracks] = useState(null);
   const [projectDnaData, setProjectDnaData] = useState(null);
   const [subtasteData, setSubtasteData] = useState(null);
   const [subtasteConnecting, setSubtasteConnecting] = useState(false);
+  const [rescanningSubtaste, setRescanningSubtaste] = useState(false);
   const [subtasteSource, setSubtasteSource] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
 
+  // --- Auto-connect on mount ---
   useEffect(() => {
     fetchSubscriptionStatus();
     fetchTotalTracks();
-    fetchAutoClassification();
     fetchCachedProjectDNA();
+
+    // 1. Load cached genome (instant)
+    fetchCachedGenome();
+
+    // 2. Auto-connect Tizita (background)
+    autoConnectTizita();
+
+    // 3. Handle URL params from quiz redirect
+    handleUrlParams();
   }, []);
+
+  // --- URL param handling (quiz callback) ---
+  const handleUrlParams = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const subtasteUserId = params.get('subtaste_user_id');
+
+    if (subtasteUserId) {
+      // Link and fetch genome
+      try {
+        const response = await axios.post('/api/subtaste/genome/default_user/link', {
+          subtaste_user_id: subtasteUserId,
+        });
+        if (response.data.success && response.data.genome) {
+          setSubtasteData(response.data.genome?.archetype || response.data.genome);
+          setSubtasteSource('quiz');
+        }
+      } catch (err) {
+        console.error('Failed to link subtaste user:', err);
+      }
+
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  // --- Cached genome fetch (instant load) ---
+  const fetchCachedGenome = async () => {
+    try {
+      const response = await axios.get('/api/subtaste/genome/default_user/cached');
+      if (response.data.success && response.data.genome) {
+        setSubtasteData(response.data.genome?.archetype || response.data.genome);
+        setSubtasteSource(response.data.source || 'cache');
+        return true;
+      }
+    } catch {
+      // No cache available
+    }
+
+    // Fall back to auto-classification
+    fetchAutoClassification();
+    return false;
+  };
+
+  // --- Auto-connect Tizita (runs on mount, no button click needed) ---
+  const autoConnectTizita = async () => {
+    setConnectingTizita(true);
+    try {
+      const [profileRes, photosRes, dnaRes] = await Promise.all([
+        axios.get('/api/deep/tizita/profile'),
+        axios.get('/api/deep/tizita/top-photos', {
+          params: { limit: 500, minScore: 0 }
+        }),
+        axios.get('/api/deep/tizita/visual-dna'),
+      ]);
+
+      try {
+        await axios.post('/api/twin/visual-dna/connect-tizita', {
+          user_id: 'default_user',
+        });
+      } catch (cacheErr) {
+        console.warn('Visual DNA cache store failed (non-fatal):', cacheErr.message);
+      }
+
+      setTizitaData({
+        profile: profileRes.data.profile,
+        photos: photosRes.data.photos,
+        visualDNA: dnaRes.data.visualDNA
+      });
+
+      fetchAutoClassification();
+    } catch (error) {
+      console.log('Tizita auto-connect unavailable:', error.message);
+      // Don't set error state on auto-connect — just leave null
+    } finally {
+      setConnectingTizita(false);
+    }
+  };
 
   const fetchSubscriptionStatus = async () => {
     try {
@@ -63,8 +151,12 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
     try {
       const response = await axios.get('/api/subtaste/auto/default_user');
       if (response.data.success && response.data.classification) {
-        setSubtasteData(response.data.classification);
-        setSubtasteSource('auto');
+        // Only set auto-classification if no quiz data is loaded
+        setSubtasteData(prev => {
+          if (prev) return prev; // Don't overwrite quiz data
+          return response.data.classification;
+        });
+        setSubtasteSource(prev => prev || 'auto');
       }
     } catch (error) {
       // Auto-classification not available yet
@@ -88,27 +180,61 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
       const response = await axios.get('/api/subtaste/genome/default_user');
       if (response.data.success) {
         setSubtasteData(response.data.genome?.archetype || response.data.genome);
-        setSubtasteSource('quiz');
+        setSubtasteSource(response.data.source || 'quiz');
       }
     } catch (err) {
       if (err.response?.status === 404 || err.response?.status === 503) {
         const quizUrl = process.env.REACT_APP_SUBTASTE_URL || 'http://localhost:3001';
-        window.location.href = `${quizUrl}/quiz`;
+        const callback = encodeURIComponent(window.location.origin + '/');
+        window.location.href = `${quizUrl}/quiz?callback=${callback}`;
       }
     } finally {
       setSubtasteConnecting(false);
     }
   };
 
-  const handleProjectDnaScanComplete = (projectDNA) => {
-    setProjectDnaData(projectDNA);
-    fetchAutoClassification();
+  // --- Rescan handlers ---
+
+  const handleRescanSubtaste = async () => {
+    setRescanningSubtaste(true);
+    try {
+      const response = await axios.post('/api/subtaste/genome/default_user/rescan');
+      if (response.data.success && response.data.genome) {
+        setSubtasteData(response.data.genome?.archetype || response.data.genome);
+        setSubtasteSource('quiz');
+      }
+    } catch (err) {
+      console.error('Subtaste rescan failed:', err);
+    } finally {
+      setRescanningSubtaste(false);
+    }
   };
 
-  const handleGlowChange = (e) => {
-    const level = parseInt(e.target.value);
-    setGlowLevel(level);
-    onGlowChange?.(level);
+  const handleRescanTizita = async () => {
+    setRescanningTizita(true);
+    try {
+      const [profileRes, photosRes, dnaRes] = await Promise.all([
+        axios.get('/api/deep/tizita/profile'),
+        axios.get('/api/deep/tizita/top-photos', {
+          params: { limit: 500, minScore: 0 }
+        }),
+        axios.get('/api/deep/tizita/visual-dna', {
+          params: { refresh: 'true' }
+        }),
+      ]);
+
+      setTizitaData({
+        profile: profileRes.data.profile,
+        photos: photosRes.data.photos,
+        visualDNA: dnaRes.data.visualDNA
+      });
+
+      fetchAutoClassification();
+    } catch (error) {
+      console.error('Tizita rescan failed:', error);
+    } finally {
+      setRescanningTizita(false);
+    }
   };
 
   const handleConnectTizita = async () => {
@@ -151,6 +277,17 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
     }
   };
 
+  const handleProjectDnaScanComplete = (projectDNA) => {
+    setProjectDnaData(projectDNA);
+    fetchAutoClassification();
+  };
+
+  const handleGlowChange = (e) => {
+    const level = parseInt(e.target.value);
+    setGlowLevel(level);
+    onGlowChange?.(level);
+  };
+
   const handleGenerateTwin = async () => {
     setIsGenerating(true);
     try {
@@ -185,6 +322,8 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
   // --- Accent elements for collapsed hub cards ---
 
   const archetypeGlyph = subtasteData?.primary?.glyph || subtasteData?.glyph;
+  const titleCase = (s) => s ? s.charAt(0) + s.slice(1).toLowerCase() : '';
+  const isInitialLoading = connectingTizita && !hasVisualDNA && !subtasteData;
 
   const colorSwatches = tizitaData?.visualDNA?.colorPalette?.length > 0 ? (
     <div className="flex gap-1">
@@ -208,12 +347,18 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
     <div>
       {/* Zone 1: Page Title */}
       <h1 className="text-display-xl text-brand-text mb-4">Nommo</h1>
-      {nothingConnected && (
+      {isInitialLoading ? (
+        <div className="flex items-center gap-3 mb-16">
+          <div className="w-4 h-4 border-2 border-brand-border border-t-brand-text rounded-full animate-spin" />
+          <p className="text-body text-brand-secondary">Loading identity data...</p>
+        </div>
+      ) : nothingConnected ? (
         <p className="text-body text-brand-secondary mb-16">
           Connect your creative catalogs to summon your Twin.
         </p>
+      ) : (
+        <div className="mb-16" />
       )}
-      {!nothingConnected && <div className="mb-16" />}
 
       {/* Zone 2: Hub Card Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
@@ -221,19 +366,17 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
         {/* Card 1 — Taste Archetype */}
         <HubCard
           label="Taste Archetype"
-          stat={subtasteData?.primary?.designation || subtasteData?.designation || null}
+          stat={subtasteData ? titleCase(subtasteData?.primary?.glyph || subtasteData?.glyph || subtasteData?.primary?.designation || subtasteData?.designation || '') : null}
           statLabel={
             subtasteData
-              ? subtasteData.primary?.creativeMode || subtasteData.creativeMode || (
-                  (subtasteData.primary?.confidence || subtasteData.confidence) > 0
-                    ? `${Math.round((subtasteData.primary?.confidence || subtasteData.confidence) * 100)}% confidence`
-                    : null
-                )
+              ? subtasteData.primary?.creativeMode || subtasteData.creativeMode || null
               : null
           }
           connected={!!subtasteData}
           onConnect={handleConnectSubtaste}
           connectLabel={subtasteConnecting ? 'Connecting...' : 'Connect Subtaste'}
+          onRescan={subtasteSource === 'quiz' ? handleRescanSubtaste : undefined}
+          rescanning={rescanningSubtaste}
           expanded={expandedCard === 'archetype'}
           onToggle={() => toggleCard('archetype')}
           accentElement={archetypeGlyph ? (
@@ -245,16 +388,16 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
               {/* Primary archetype */}
               <div className="border border-brand-border p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-display-sm">{subtasteData.primary?.glyph || subtasteData.glyph || ''}</span>
+                  <span className="text-display-sm">{subtasteData.primary?.symbol || ''}</span>
                   <div>
                     <p className="text-body text-brand-text font-medium">
-                      {subtasteData.primary?.designation || subtasteData.designation || ''}
+                      {titleCase(subtasteData.primary?.glyph || subtasteData.glyph || '')}
                     </p>
                     <p className="text-body-sm text-brand-secondary">
                       {subtasteData.primary?.creativeMode || subtasteData.creativeMode || ''}
                     </p>
                   </div>
-                  {(subtasteData.primary?.confidence || subtasteData.confidence) > 0 && (
+                  {(subtasteData.primary?.confidence || subtasteData.confidence) > 0.01 && (
                     <span className="ml-auto text-body-sm text-brand-secondary font-mono">
                       {Math.round((subtasteData.primary?.confidence || subtasteData.confidence) * 100)}%
                     </span>
@@ -278,10 +421,10 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                 <div className="space-y-2">
                   {subtasteData.secondary && (
                     <div className="flex items-center gap-2 text-body-sm border border-brand-border p-3">
-                      <span className="text-brand-text">{subtasteData.secondary.glyph}</span>
-                      <span className="text-brand-text">{subtasteData.secondary.designation}</span>
+                      <span className="text-brand-text font-mono">{subtasteData.secondary.symbol || ''}</span>
+                      <span className="text-brand-text">{titleCase(subtasteData.secondary.glyph || '')}</span>
                       <span className="text-brand-secondary">{subtasteData.secondary.creativeMode}</span>
-                      {subtasteData.secondary.confidence > 0 && (
+                      {subtasteData.secondary.confidence > 0.01 && (
                         <span className="ml-auto font-mono text-brand-secondary">
                           {Math.round(subtasteData.secondary.confidence * 100)}%
                         </span>
@@ -290,10 +433,10 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                   )}
                   {subtasteData.tertiary && (
                     <div className="flex items-center gap-2 text-body-sm border border-brand-border p-3 opacity-70">
-                      <span className="text-brand-text">{subtasteData.tertiary.glyph}</span>
-                      <span className="text-brand-text">{subtasteData.tertiary.designation}</span>
+                      <span className="text-brand-text font-mono">{subtasteData.tertiary.symbol || ''}</span>
+                      <span className="text-brand-text">{titleCase(subtasteData.tertiary.glyph || '')}</span>
                       <span className="text-brand-secondary">{subtasteData.tertiary.creativeMode}</span>
-                      {subtasteData.tertiary.confidence > 0 && (
+                      {subtasteData.tertiary.confidence > 0.01 && (
                         <span className="ml-auto font-mono text-brand-secondary">
                           {Math.round(subtasteData.tertiary.confidence * 100)}%
                         </span>
@@ -313,7 +456,7 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                       .slice(0, 6)
                       .map(([designation, weight]) => (
                         <div key={designation} className="flex items-center gap-2">
-                          <span className="text-body-sm text-brand-secondary font-mono w-10">{designation}</span>
+                          <span className="text-body-sm text-brand-text font-mono w-8">{subtasteData.symbolMap?.[designation] || designation}</span>
                           <div className="flex-1 h-2 bg-brand-border">
                             <div
                               className="h-2 bg-brand-text"
@@ -332,20 +475,23 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
               {/* Source + Refine */}
               <div className="flex items-center justify-between pt-2 border-t border-brand-border">
                 <span className="uppercase-label text-brand-secondary">
-                  {subtasteSource === 'quiz' ? 'Quiz-validated' : 'Auto-classified'}
+                  {subtasteSource === 'quiz' ? 'Quiz-validated' :
+                   subtasteSource === 'cache' ? 'Cached' : 'Auto-classified'}
                 </span>
-                {subtasteSource !== 'quiz' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const quizUrl = process.env.REACT_APP_SUBTASTE_URL || 'http://localhost:3001';
-                      window.location.href = `${quizUrl}/quiz`;
-                    }}
-                    className="text-body-sm text-brand-text underline"
-                  >
-                    Refine with quiz
-                  </button>
-                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const quizUrl = process.env.REACT_APP_SUBTASTE_URL || 'http://localhost:3001';
+                    const callback = encodeURIComponent(window.location.origin + '/');
+                    // Pass existing user ID so quiz can skip intro if profile exists
+                    const userId = subtasteData?.userId || '';
+                    const userParam = userId ? `&userId=${userId}` : '';
+                    window.location.href = `${quizUrl}/quiz?callback=${callback}${userParam}`;
+                  }}
+                  className="text-body-sm text-brand-text underline"
+                >
+                  {subtasteSource === 'quiz' ? 'Retake quiz' : 'Refine with quiz'}
+                </button>
               </div>
             </div>
           )}
@@ -367,6 +513,8 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
           connected={hasVisualDNA}
           onConnect={handleConnectTizita}
           connectLabel={connectingTizita ? 'Connecting...' : 'Connect Tizita'}
+          onRescan={hasVisualDNA ? handleRescanTizita : undefined}
+          rescanning={rescanningTizita}
           expanded={expandedCard === 'visual'}
           onToggle={() => toggleCard('visual')}
           accentElement={colorSwatches}
@@ -480,6 +628,7 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
               {tizitaData.visualDNA?.colorPalette?.length > 0 && (
                 <VisualLineageDiscovery
                   colorPalette={tizitaData.visualDNA.colorPalette}
+                  userId="default_user"
                 />
               )}
             </div>

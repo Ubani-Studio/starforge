@@ -168,7 +168,7 @@ const MusicLibrary = ({ userId = 'default_user', onTrackSelect }) => {
           <div className="flex gap-4 text-body-xs text-brand-secondary">
             {stats.sources.map((source) => (
               <span key={source.source}>
-                {source.source}: {source.count}
+                <span className="capitalize">{source.source}</span>: {source.count}
               </span>
             ))}
           </div>
@@ -179,7 +179,7 @@ const MusicLibrary = ({ userId = 'default_user', onTrackSelect }) => {
       <div className="flex gap-0 mb-6 border-b border-brand-border">
         <button
           onClick={() => { setLibraryMode('all'); setPage(1); }}
-          className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+          className={`px-4 py-2 text-xs tracking-wider transition-all ${
             libraryMode === 'all'
               ? 'text-brand-primary border-b-2 border-brand-primary'
               : 'text-brand-secondary hover:text-brand-text'
@@ -189,7 +189,7 @@ const MusicLibrary = ({ userId = 'default_user', onTrackSelect }) => {
         </button>
         <button
           onClick={() => { setLibraryMode('dj'); setPage(1); }}
-          className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+          className={`px-4 py-2 text-xs tracking-wider transition-all ${
             libraryMode === 'dj'
               ? 'text-brand-primary border-b-2 border-brand-primary'
               : 'text-brand-secondary hover:text-brand-text'
@@ -199,7 +199,7 @@ const MusicLibrary = ({ userId = 'default_user', onTrackSelect }) => {
         </button>
         <button
           onClick={() => { setLibraryMode('original'); setPage(1); }}
-          className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+          className={`px-4 py-2 text-xs tracking-wider transition-all ${
             libraryMode === 'original'
               ? 'text-brand-primary border-b-2 border-brand-primary'
               : 'text-brand-secondary hover:text-brand-text'
@@ -296,7 +296,7 @@ const MusicLibrary = ({ userId = 'default_user', onTrackSelect }) => {
               >
                 <td className="p-3 text-brand-text">
                   <div className="max-w-xs truncate">{track.filename}</div>
-                  {track.rekordbox_comments && (
+                  {track.rekordbox_comments && !track.rekordbox_comments.includes('www.mediahuman.com') && (
                     <div className="text-body-xs text-brand-secondary truncate max-w-xs">
                       {track.rekordbox_comments}
                     </div>
@@ -382,9 +382,10 @@ const MusicLibrary = ({ userId = 'default_user', onTrackSelect }) => {
                       e.stopPropagation();
                       handleDelete(track.id);
                     }}
-                    className="text-body-xs text-red-500 hover:text-red-400"
+                    className="text-red-500/60 hover:text-red-400 transition-colors text-sm leading-none"
+                    title="Delete track"
                   >
-                    Delete
+                    ✕
                   </button>
                 </td>
               </tr>

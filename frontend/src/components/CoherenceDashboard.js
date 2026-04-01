@@ -103,19 +103,19 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
   if (!hasData) {
     return (
       <div className="max-w-2xl mx-auto py-24 text-center">
-        <h2 className="text-display-md text-brand-text mb-4">AESTHETIC COHERENCE ENGINE</h2>
+        <h1 className="text-display-xl text-brand-text mb-8">Aesthetic DNA</h1>
         <p className="text-body text-brand-secondary mb-8">
           Upload music and connect Tizita to analyze your aesthetic DNA across audio and visual domains.
         </p>
         <div className="grid grid-cols-2 gap-6 text-left">
           <div className="border border-brand-border p-6">
-            <h3 className="text-brand-text font-medium mb-2">Audio Dna</h3>
+            <h3 className="text-brand-text font-medium mb-2">Audio DNA</h3>
             <p className="text-body-sm text-brand-secondary">
               Upload tracks or import Rekordbox library to analyze your sonic palette, taste coherence, and genre lineage.
             </p>
           </div>
           <div className="border border-brand-border p-6">
-            <h3 className="text-brand-text font-medium mb-2">Visual Dna</h3>
+            <h3 className="text-brand-text font-medium mb-2">Visual DNA</h3>
             <p className="text-body-sm text-brand-secondary">
               Connect Tizita to analyze your photo aesthetics, color palettes, and visual themes.
             </p>
@@ -130,10 +130,7 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
       {/* Hero Section - Overall Coherence */}
       <div className="border border-brand-border p-8">
         <div className="max-w-3xl">
-          <h2 className="text-display-lg text-brand-text mb-3">Aesthetic Dna</h2>
-          <p className="text-body text-brand-secondary mb-6">
-            Deep analysis of your creative identity across audio and visual domains
-          </p>
+          <h1 className="text-display-xl text-brand-text mb-8">Aesthetic DNA</h1>
 
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-6">
@@ -166,7 +163,7 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
         {/* Audio DNA Card */}
         <div className="border border-brand-border p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-display-sm text-brand-text">Audio Dna</h3>
+            <h3 className="text-display-sm text-brand-text">Audio DNA</h3>
 
             {/* Mode Selector */}
             <div className="flex gap-0 border-b border-brand-border">
@@ -288,7 +285,7 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
 
         {/* Visual DNA Card */}
         <div className="border border-brand-border p-6">
-          <h3 className="text-display-sm text-brand-text mb-4">Visual Dna</h3>
+          <h3 className="text-display-sm text-brand-text mb-4">Visual DNA</h3>
 
           {!tizitaData || tizitaData.error ? (
             <div className="space-y-4">
