@@ -17,15 +17,16 @@ class CrossModalAnalyzer {
   }
 
   /**
-   * Analyze cross-modal coherence between visual and audio DNA
+   * Analyze cross-modal coherence between visual, audio, and optionally writing DNA
    */
-  analyzeCrossModalCoherence(visualDNA, audioDNA) {
+  analyzeCrossModalCoherence(visualDNA, audioDNA, writingDNA) {
     if (!visualDNA || !audioDNA) {
       return {
         overall: 0,
         audioVisualMatch: 0,
         energyAlignment: 0,
         diversityAlignment: 0,
+        writingAlignment: 0,
         details: {
           message: 'Missing visual or audio DNA'
         }
@@ -50,23 +51,94 @@ class CrossModalAnalyzer {
       audioDNA
     );
 
-    // Overall coherence (weighted average)
-    const overall = (
-      audioVisualMatch * 0.4 +
-      energyAlignment * 0.35 +
-      diversityAlignment * 0.25
-    );
+    // 4. Writing alignment (if WritingDNA available)
+    let writingAlignment = null;
+    let writingTension = null;
+    if (writingDNA && writingDNA.metrics) {
+      const wa = this.analyzeWritingCoherence(writingDNA, visualDNA, audioDNA);
+      writingAlignment = wa.alignment;
+      writingTension = wa.tension;
+    }
+
+    // Overall coherence (rebalance weights if writing available)
+    let overall;
+    if (writingAlignment != null) {
+      overall = (
+        audioVisualMatch * 0.3 +
+        energyAlignment * 0.25 +
+        diversityAlignment * 0.2 +
+        writingAlignment * 0.25
+      );
+    } else {
+      overall = (
+        audioVisualMatch * 0.4 +
+        energyAlignment * 0.35 +
+        diversityAlignment * 0.25
+      );
+    }
 
     return {
       overall: Math.round(overall * 100) / 100,
       audioVisualMatch: Math.round(audioVisualMatch * 100) / 100,
       energyAlignment: Math.round(energyAlignment * 100) / 100,
       diversityAlignment: Math.round(diversityAlignment * 100) / 100,
+      writingAlignment: writingAlignment != null ? Math.round(writingAlignment * 100) / 100 : null,
+      writingTension: writingTension,
       details: {
         visualPalette: visualDNA.paletteCharacteristics,
         audioTonal: audioDNA.tonalCharacteristics,
-        interpretation: this.generateInterpretation(overall)
+        interpretation: this.generateInterpretation(overall, writingTension)
       }
+    };
+  }
+
+  /**
+   * Analyze how writing style aligns with visual and audio aesthetic.
+   * Returns both alignment (0-1) and creative tension description.
+   *
+   * Short sentences + minimal music + stark visuals = high coherence
+   * Lush prose + harsh noise = creative tension (valuable signal, not penalty)
+   */
+  analyzeWritingCoherence(writingDNA, visualDNA, audioDNA) {
+    const m = writingDNA.metrics || {};
+    const p = writingDNA.patterns || {};
+
+    // Infer writing "energy" from metrics
+    const sentenceEnergy = Math.min(1, (m.avgSentenceLength || 15) / 30); // long = high
+    const exclamationEnergy = Math.min(1, (m.exclamationFrequency || 0) * 5);
+    const writingEnergy = sentenceEnergy * 0.6 + exclamationEnergy * 0.4;
+
+    // Infer writing "density" from vocabulary
+    const writingDensity = m.typeTokenRatio || 0.5;
+
+    // Compare to audio energy
+    const audioEnergy = audioDNA.avgEnergy || 0.5;
+    const energyDiff = Math.abs(writingEnergy - audioEnergy);
+
+    // Compare to visual energy
+    const visualEnergy = this.inferVisualEnergy(visualDNA);
+    const visualDiff = Math.abs(writingEnergy - visualEnergy);
+
+    // Alignment = inverse of average difference
+    const alignment = 1 - (energyDiff * 0.5 + visualDiff * 0.5);
+
+    // Detect creative tension (when writing diverges sharply from other modalities)
+    let tension = null;
+    if (energyDiff > 0.4 || visualDiff > 0.4) {
+      const writingStyle = writingEnergy > 0.6 ? 'expansive, high-energy prose' : 'terse, minimal writing';
+      const audioStyle = audioEnergy > 0.6 ? 'high-energy music' : 'subdued, atmospheric music';
+      const visualStyle = visualEnergy > 0.6 ? 'dynamic visuals' : 'contemplative imagery';
+
+      tension = {
+        description: `${writingStyle} paired with ${audioStyle} and ${visualStyle}`,
+        type: energyDiff > visualDiff ? 'writing-audio tension' : 'writing-visual tension',
+        magnitude: Math.max(energyDiff, visualDiff),
+      };
+    }
+
+    return {
+      alignment: Math.max(0, Math.min(1, alignment)),
+      tension,
     };
   }
 
@@ -187,16 +259,23 @@ class CrossModalAnalyzer {
   /**
    * Generate human-readable interpretation
    */
-  generateInterpretation(overallScore) {
+  generateInterpretation(overallScore, writingTension) {
+    let base;
     if (overallScore >= 0.8) {
-      return 'Highly aligned aesthetic across visual and audio domains';
+      base = 'Highly aligned aesthetic across all modalities';
     } else if (overallScore >= 0.6) {
-      return 'Strong coherence between visual and audio preferences';
+      base = 'Strong coherence between visual, audio, and writing';
     } else if (overallScore >= 0.4) {
-      return 'Moderate alignment with some divergence';
+      base = 'Moderate alignment with creative divergence';
     } else {
-      return 'Distinct aesthetic approaches across visual and audio';
+      base = 'Distinct aesthetic approaches across modalities';
     }
+
+    if (writingTension) {
+      base += `. Creative tension: ${writingTension.description}`;
+    }
+
+    return base;
   }
 
   /**

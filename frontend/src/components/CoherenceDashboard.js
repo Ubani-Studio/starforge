@@ -19,28 +19,31 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
 
   useEffect(() => {
     fetchAllData();
-  }, [userId, analysisMode, tizitaData]);
+  }, [userId, analysisMode]);
+
+  // Sync visual DNA when tizita connects (without refetching audio)
+  useEffect(() => {
+    if (tizitaData && !tizitaData.error) {
+      setVisualDNA(tizitaData.visualDNA);
+    }
+  }, [tizitaData]);
 
   const fetchAllData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch Audio DNA (influence genealogy)
-      const audioResponse = await axios.get(`/api/deep/audio/influence-genealogy?user_id=${userId}&mode=${analysisMode}`);
+      // Fetch Audio DNA + Taste Coherence in PARALLEL
+      const [audioResponse, coherenceResponse] = await Promise.all([
+        axios.get(`/api/deep/audio/influence-genealogy?user_id=${userId}&mode=${analysisMode}`),
+        axios.get(`/api/audio/taste/coherence?user_id=${userId}`)
+      ]);
+
       if (audioResponse.data.success) {
         setAudioDNA(audioResponse.data.genealogy);
       }
-
-      // Fetch Taste Coherence
-      const coherenceResponse = await axios.get(`/api/audio/taste/coherence?user_id=${userId}`);
       if (coherenceResponse.data.success) {
         setTasteCoherence(coherenceResponse.data);
-      }
-
-      // Fetch Visual DNA (Tizita) - only if already connected
-      if (tizitaData && !tizitaData.error) {
-        setVisualDNA(tizitaData.visualDNA);
       }
 
     } catch (error) {
@@ -55,15 +58,17 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
     setConnectingTizita(true);
 
     try {
-      const profileRes = await axios.get('/api/deep/tizita/profile');
-      // Fetch ALL photos (not just top 20)
-      const photosRes = await axios.get('/api/deep/tizita/top-photos', {
-        params: {
-          limit: 500,  // High limit to get all photos
-          minScore: 0  // Include all scores, not just top-rated
-        }
-      });
-      const dnaRes = await axios.get('/api/deep/tizita/visual-dna');
+      // Fetch profile, top photos, and visual DNA in PARALLEL
+      const [profileRes, photosRes, dnaRes] = await Promise.all([
+        axios.get('/api/deep/tizita/profile'),
+        axios.get('/api/deep/tizita/top-photos', {
+          params: {
+            limit: 50,
+            minScore: 0.5
+          }
+        }),
+        axios.get('/api/deep/tizita/visual-dna')
+      ]);
 
       const connectedData = {
         profile: profileRes.data.profile,
@@ -127,34 +132,33 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section - Overall Coherence */}
-      <div className="border border-brand-border p-8">
-        <div className="max-w-3xl">
-          <h1 className="text-display-xl text-brand-text mb-8">Aesthetic DNA</h1>
+      {/* Page Title */}
+      <div>
+        <h1 className="text-display-xl text-brand-text mb-4">Aesthetic DNA</h1>
+        <div className="mb-12" />
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-6">
-            {audioDNA && (
-              <div>
-                <p className="uppercase-label text-brand-secondary mb-2">Audio Tracks</p>
-                <p className="text-display-md text-brand-text">{audioDNA.trackCount || 0}</p>
-              </div>
-            )}
-            {visualDNA && (
-              <div>
-                <p className="uppercase-label text-brand-secondary mb-2">Visual Samples</p>
-                <p className="text-display-md text-brand-text">{visualDNA.photoCount || 0}</p>
-              </div>
-            )}
-            {tasteCoherence && (
-              <div>
-                <p className="uppercase-label text-brand-secondary mb-2">Taste Coherence</p>
-                <p className="text-display-md text-brand-text">
-                  {(tasteCoherence.coherence?.overall * 100).toFixed(0)}%
-                </p>
-              </div>
-            )}
-          </div>
+        {/* Quick Stats */}
+        <div className="flex gap-8 mb-8">
+          {audioDNA && (
+            <div>
+              <p className="uppercase-label text-brand-secondary mb-1">Audio Tracks</p>
+              <p className="text-display-md text-brand-text">{audioDNA.trackCount || 0}</p>
+            </div>
+          )}
+          {visualDNA && (
+            <div>
+              <p className="uppercase-label text-brand-secondary mb-1">Visual Samples</p>
+              <p className="text-display-md text-brand-text">{visualDNA.photoCount || 0}</p>
+            </div>
+          )}
+          {tasteCoherence && (
+            <div>
+              <p className="uppercase-label text-brand-secondary mb-1">Taste Coherence</p>
+              <p className="text-display-md text-brand-text">
+                {(tasteCoherence.coherence?.overall * 100).toFixed(0)}%
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -169,7 +173,7 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
             <div className="flex gap-0 border-b border-brand-border">
               <button
                 onClick={() => setAnalysisMode('original')}
-                className={`px-3 py-1 text-xs uppercase tracking-wider transition-all ${
+                className={`px-3 py-1 text-xs capitalize tracking-wider transition-all ${
                   analysisMode === 'original'
                     ? 'text-brand-text border-b-2 border-brand-text'
                     : 'text-brand-secondary hover:text-brand-text'
@@ -179,7 +183,7 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
               </button>
               <button
                 onClick={() => setAnalysisMode('dj')}
-                className={`px-3 py-1 text-xs uppercase tracking-wider transition-all ${
+                className={`px-3 py-1 text-xs capitalize tracking-wider transition-all ${
                   analysisMode === 'dj'
                     ? 'text-brand-text border-b-2 border-brand-text'
                     : 'text-brand-secondary hover:text-brand-text'
@@ -189,7 +193,7 @@ const CoherenceDashboard = ({ userId = 'default_user' }) => {
               </button>
               <button
                 onClick={() => setAnalysisMode('hybrid')}
-                className={`px-3 py-1 text-xs uppercase tracking-wider transition-all ${
+                className={`px-3 py-1 text-xs capitalize tracking-wider transition-all ${
                   analysisMode === 'hybrid'
                     ? 'text-brand-text border-b-2 border-brand-text'
                     : 'text-brand-secondary hover:text-brand-text'

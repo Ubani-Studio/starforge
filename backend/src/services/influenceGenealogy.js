@@ -8,13 +8,28 @@ const path = require('path');
  * Elite tier feature - shows taste evolution and heritage
  */
 class InfluenceGenealogyService {
-  
+  constructor() {
+    this._cache = new Map();
+    this._cacheTTL = 5 * 60 * 1000; // 5 minutes
+  }
+
+  _getCacheKey(userId, mode) {
+    return `${userId}:${mode}`;
+  }
+
   /**
    * Analyze user's music and generate influence genealogy
    */
   async analyzeInfluenceGenealogy(userId, options = {}) {
     try {
       const { mode = 'hybrid' } = options;
+
+      // Check cache first
+      const cacheKey = this._getCacheKey(userId, mode);
+      const cached = this._cache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < this._cacheTTL)) {
+        return cached.data;
+      }
 
       // Get user's audio data filtered by mode
       const audioDb = new Database(path.join(__dirname, '../../starforge_audio.db'));
@@ -73,7 +88,7 @@ class InfluenceGenealogyService {
         modeContext = ' (Hybrid Analysis - combining your DJ curation and original productions)';
       }
 
-      return {
+      const result = {
         available: true,
         mode: mode,
         modeContext: modeContext,
@@ -94,6 +109,11 @@ class InfluenceGenealogyService {
         treeData: treeData,
         trackCount: tracks.length
       };
+
+      // Cache the result
+      this._cache.set(cacheKey, { data: result, timestamp: Date.now() });
+
+      return result;
 
     } catch (error) {
       console.error('Error analyzing influence genealogy:', error);

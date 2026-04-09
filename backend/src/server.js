@@ -61,7 +61,7 @@ const upload = multer({
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Pweza API is running' });
+  res.json({ status: 'ok', message: 'Ori API is running' });
 });
 
 // Upload files
@@ -487,6 +487,24 @@ app.use('/api/twin/visual-dna', twinVisualDnaRoutes);
 const expansionRoutes = require('./routes/expansion');
 app.use('/api/expansion', expansionRoutes);
 
+// ========================================
+// WRITING DNA (IBIS INTEGRATION)
+// ========================================
+const writingDnaRoutes = require('./routes/writingDna');
+app.use('/api/writing-dna', writingDnaRoutes);
+
+// ========================================
+// IDENTITY (NARRATIVE + DRIFT + SNAPSHOTS)
+// ========================================
+const identityRoutes = require('./routes/identity');
+app.use('/api/identity', identityRoutes);
+
+// ========================================
+// RELATIONAL INTELLIGENCE (DUO/TEAM)
+// ========================================
+const relationalRoutes = require('./routes/relational');
+app.use('/api/relational', relationalRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -495,5 +513,5 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🐙 Pweza API running on port ${PORT}`);
+  console.log(`🐙 Ori API running on port ${PORT}`);
 });

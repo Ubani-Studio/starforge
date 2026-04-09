@@ -10,6 +10,246 @@ import InfluenceGenealogyPanel from './InfluenceGenealogyPanel';
 import ProjectDNAPanel from './ProjectDNAPanel';
 import LineageDiscoveries from './LineageDiscoveries';
 import VisualLineageDiscovery from './VisualLineageDiscovery';
+import DriftPanel from './DriftPanel';
+
+// Archetype designation → glyph name + Greek symbol + full relational data
+// This is the single source of truth for archetype metadata.
+// Other apps (Qualn, Crucibla, etc.) can query a user's designation via
+// Subtaste API and look up relational data from their own copy of this map.
+const GLYPH_MAP = {
+  'S-0': {
+    glyph: 'KETH', symbol: 'Θ',
+    essence: 'The unmarked throne. First without announcement.',
+    creativeMode: 'Visionary',
+    shadow: 'Paralysis by standard. Nothing meets the mark.',
+    recogniseBy: 'Others unconsciously defer to their judgment. They rarely explain themselves.',
+    strengths: ['Standard-setting', 'Quality judgment', 'Direction without persuasion'],
+    roles: ['Creative director', 'Taste authority', 'Brand guardian'],
+    avoidTasking: 'Operational detail, democratic decision-making, public justification',
+    collaboratesWith: ['F-9', 'T-1'],
+    collaboratesWhy: 'Anvil executes your vision. Strata builds the architecture you need.',
+    tensionWith: ['R-10'],
+    tensionWhy: 'Schism challenges your authority, but their friction sharpens your standards.',
+    avoidWith: ['H-6'],
+    avoidWhy: 'Toll shares indiscriminately what you curate silently.',
+    growthToward: 'N-5',
+    growthWhy: 'Learning to connect rather than judge. Your standards gain reach when you bridge.',
+  },
+  'T-1': {
+    glyph: 'STRATA', symbol: 'Σ',
+    essence: 'The hidden architecture. Layers beneath surfaces.',
+    creativeMode: 'Architectural',
+    shadow: 'Over-engineering. The system becomes the end.',
+    recogniseBy: 'They explain systems you did not know existed.',
+    strengths: ['Systems design', 'Pattern recognition', 'Infrastructure thinking'],
+    roles: ['Strategist', 'Platform architect', 'Catalogue designer'],
+    avoidTasking: 'Improvisation, rapid prototyping without structure, ambiguity tolerance',
+    collaboratesWith: ['S-0', 'N-5'],
+    collaboratesWhy: 'Keth provides the vision your systems serve. Limn connects your structures to broader networks.',
+    tensionWith: ['D-8'],
+    tensionWhy: 'Wick operates by instinct where you demand logic, but their intuition finds what your systems miss.',
+    avoidWith: ['C-4'],
+    avoidWhy: 'Cull reduces what you build. Their elimination instinct can dismantle your architecture.',
+    growthToward: 'D-8',
+    growthWhy: 'Learning to trust intuition alongside structure. Not everything needs a system.',
+  },
+  'V-2': {
+    glyph: 'OMEN', symbol: 'Δ',
+    essence: 'What arrives before itself. The shape of the unformed.',
+    creativeMode: 'Prophetic',
+    shadow: 'Cassandra syndrome. Right too soon.',
+    recogniseBy: 'Their recommendations age well. Years later, you remember what they said.',
+    strengths: ['Trend forecasting', 'Early signal detection', 'Temporal taste'],
+    roles: ['Scout', 'A&R (early-stage)', 'Trend analyst', 'Futures researcher'],
+    avoidTasking: 'Execution under deadline, operational shipping, consensus building',
+    collaboratesWith: ['L-3', 'P-7'],
+    collaboratesWhy: 'Silt has the patience to wait for your predictions to land. Vault provides the deep references that validate your foresight.',
+    tensionWith: ['F-9'],
+    tensionWhy: 'Anvil wants to ship now while you see further ahead, but their urgency gives your vision a deadline.',
+    avoidWith: ['H-6'],
+    avoidWhy: 'Toll shares prematurely what you sense should be held until the timing is right.',
+    growthToward: 'F-9',
+    growthWhy: 'Learning to act on your foresight. Seeing is not enough. Prophecy needs form.',
+  },
+  'L-3': {
+    glyph: 'SILT', symbol: 'Λ',
+    essence: 'What remains after the river passes. The patient residue.',
+    creativeMode: 'Curatorial',
+    shadow: 'Endless patience becomes enabling.',
+    recogniseBy: 'Long memory. They remember what you showed them three years ago.',
+    strengths: ['Long-term curation', 'Cultural memory', 'Contextual depth'],
+    roles: ['Curator', 'Archivist', 'Catalogue manager', 'Heritage consultant'],
+    avoidTasking: 'Fast-turnaround projects, trend-chasing, disposable content',
+    collaboratesWith: ['V-2', 'P-7'],
+    collaboratesWhy: 'Omen sees what is coming. Vault guards what has been. Together with you, nothing is lost.',
+    tensionWith: ['F-9'],
+    tensionWhy: 'Anvil moves fast and breaks what you preserve, but their output gives you new material to curate.',
+    avoidWith: ['R-10'],
+    avoidWhy: 'Schism fractures the continuity you maintain.',
+    growthToward: 'H-6',
+    growthWhy: 'Learning to share what you have gathered. Curation without transmission is a private museum.',
+  },
+  'C-4': {
+    glyph: 'CULL', symbol: 'Ξ',
+    essence: 'To know what must be removed. Taste by elimination.',
+    creativeMode: 'Reductive',
+    shadow: 'Nihilistic rejection. Nothing survives.',
+    recogniseBy: 'Sparse playlists. Brutal honesty.',
+    strengths: ['Editorial judgment', 'Quality control', 'Brand discipline'],
+    roles: ['Editor', 'Gatekeeper', 'QA lead', 'Playlist curator'],
+    avoidTasking: 'Open brainstorming, generative workshops, saying yes',
+    collaboratesWith: ['Ø', 'S-0'],
+    collaboratesWhy: 'Void understands removal as creation. Keth shares your high standards.',
+    tensionWith: ['P-7'],
+    tensionWhy: 'Vault hoards what you would cut, but their archive reminds you what should have survived.',
+    avoidWith: ['H-6'],
+    avoidWhy: 'Toll shares everything. You eliminate everything. Neither meets the other.',
+    growthToward: 'L-3',
+    growthWhy: 'Learning that some things deserve to stay. Patience before the cut.',
+  },
+  'N-5': {
+    glyph: 'LIMN', symbol: 'Φ',
+    essence: 'To illuminate by edge. The binding outline.',
+    creativeMode: 'Connective',
+    shadow: 'Pathological balance. Refuses to choose.',
+    recogniseBy: 'Unexpected pairings that work. Playlists that should not cohere but do.',
+    strengths: ['Cross-pollination', 'Bridging genres and scenes', 'Creative direction'],
+    roles: ['Creative director', 'A&R', 'Sync supervisor', 'Brand collaborator'],
+    avoidTasking: 'Single-lane focus, binary elimination, choosing one side',
+    collaboratesWith: ['T-1', 'D-8'],
+    collaboratesWhy: 'Strata provides structure for your connections. Wick channels what you link intuitively.',
+    tensionWith: ['C-4'],
+    tensionWhy: 'Cull eliminates the bridges you build, but their cuts reveal which connections were real.',
+    avoidWith: ['S-0'],
+    avoidWhy: 'Keth resists being connected to things beneath their standard.',
+    growthToward: 'C-4',
+    growthWhy: 'Learning to choose. Not all connections are worth making. Strength through selection.',
+  },
+  'H-6': {
+    glyph: 'TOLL', symbol: 'Ψ',
+    essence: 'What must be paid to pass. The cost of transmission.',
+    creativeMode: 'Evangelical',
+    shadow: 'Missionary zeal. Sharing becomes shoving.',
+    recogniseBy: 'Relentless enthusiasm. They have sent you the same link three times.',
+    strengths: ['Audience building', 'Community activation', 'Cultural transmission'],
+    roles: ['Community manager', 'Promoter', 'Playlist evangelist', 'Culture writer'],
+    avoidTasking: 'Restraint, secrecy, holding information back, silent curation',
+    collaboratesWith: ['F-9', 'V-2'],
+    collaboratesWhy: 'Anvil makes things worth sharing. Omen finds them before anyone else.',
+    tensionWith: ['P-7'],
+    tensionWhy: 'Vault guards what you want to share, but their gatekeeping ensures only worthy things circulate.',
+    avoidWith: ['C-4'],
+    avoidWhy: 'Cull eliminates what you amplify. Your energy exhausts their restraint.',
+    growthToward: 'P-7',
+    growthWhy: 'Learning when not to share. Restraint makes your signal stronger.',
+  },
+  'P-7': {
+    glyph: 'VAULT', symbol: 'Π',
+    essence: 'What is kept below the surface. The guarded archive.',
+    creativeMode: 'Archival',
+    shadow: 'Hoarding. Knowledge that never circulates.',
+    recogniseBy: 'They cite sources you have never heard of.',
+    strengths: ['Deep research', 'Reference networks', 'Knowledge preservation'],
+    roles: ['Research lead', 'Sample digger', 'Reference curator', 'Music librarian'],
+    avoidTasking: 'Rapid sharing, public-facing promotion, trend commentary',
+    collaboratesWith: ['L-3', 'T-1'],
+    collaboratesWhy: 'Silt shares your long memory. Strata builds systems to organise your archive.',
+    tensionWith: ['H-6'],
+    tensionWhy: 'Toll wants to share everything you guard, but their reach gives your knowledge an audience.',
+    avoidWith: ['C-4'],
+    avoidWhy: 'Cull would reduce your archive to ashes.',
+    growthToward: 'H-6',
+    growthWhy: 'Learning to release. Knowledge guarded forever is knowledge that dies with you.',
+  },
+  'D-8': {
+    glyph: 'WICK', symbol: 'Ω',
+    essence: 'The drawn line that feeds the flame. Channel and fuel.',
+    creativeMode: 'Channelling',
+    shadow: 'Dissolution. The channel consumes the self.',
+    recogniseBy: 'Uncanny recommendations. They cannot always explain why.',
+    strengths: ['Intuitive discovery', 'Mood curation', 'Instinctive A&R'],
+    roles: ['DJ', 'Mood curator', 'Intuitive A&R', 'Sonic designer'],
+    avoidTasking: 'Systematic analysis, written justification, process documentation',
+    collaboratesWith: ['N-5', 'Ø'],
+    collaboratesWhy: 'Limn gives structure to your intuitions. Void receives what you channel without distortion.',
+    tensionWith: ['T-1'],
+    tensionWhy: 'Strata demands logic where you operate by instinct, but their frameworks give your signal durability.',
+    avoidWith: ['S-0'],
+    avoidWhy: 'Keth demands explanation you cannot always provide.',
+    growthToward: 'T-1',
+    growthWhy: 'Learning to build containers for what you channel. Instinct needs architecture to survive.',
+  },
+  'F-9': {
+    glyph: 'ANVIL', symbol: 'Γ',
+    essence: 'Where force meets form. The shaping surface.',
+    creativeMode: 'Generative',
+    shadow: 'Crude materialism. Only what ships matters.',
+    recogniseBy: 'They have built something. While others talked, they shipped.',
+    strengths: ['Execution', 'Rapid prototyping', 'Production discipline'],
+    roles: ['Producer', 'Release manager', 'Project lead', 'Content creator'],
+    avoidTasking: 'Long deliberation, theoretical planning, waiting for perfect timing',
+    collaboratesWith: ['H-6', 'S-0'],
+    collaboratesWhy: 'Toll amplifies what you make. Keth sets the standard your work should reach.',
+    tensionWith: ['V-2'],
+    tensionWhy: 'Omen says wait while you want to ship, but their timing prevents premature releases.',
+    avoidWith: ['Ø'],
+    avoidWhy: 'Void receives passively where you demand action.',
+    growthToward: 'V-2',
+    growthWhy: 'Learning to wait. Not everything should ship immediately. Timing is a material.',
+  },
+  'R-10': {
+    glyph: 'SCHISM', symbol: 'Ϟ',
+    essence: 'The productive fracture. Where division creates.',
+    creativeMode: 'Contrarian',
+    shadow: 'Reflexive opposition. Disagreement as identity.',
+    recogniseBy: 'Their takes age strangely. What seemed wrong becomes obvious.',
+    strengths: ['Critical thinking', 'Genre disruption', 'Counter-positioning'],
+    roles: ['Critic', 'Devil\u2019s advocate', 'Anti-A&R', 'Subculture pioneer'],
+    avoidTasking: 'Consensus-building, brand alignment, diplomatic communication',
+    collaboratesWith: ['V-2', 'C-4'],
+    collaboratesWhy: 'Omen sees differently too. Cull shares your willingness to reject.',
+    tensionWith: ['S-0'],
+    tensionWhy: 'Keth sets standards you instinctively challenge, but their authority tests whether your dissent has substance.',
+    avoidWith: ['L-3'],
+    avoidWhy: 'Silt preserves the continuity you fracture.',
+    growthToward: 'L-3',
+    growthWhy: 'Learning that some things should not be broken. Patience before the fracture.',
+  },
+  'Ø': {
+    glyph: 'VOID', symbol: 'Ø',
+    essence: 'The space that allows everything else. Receptive emptiness.',
+    creativeMode: 'Receptive',
+    shadow: 'Passivity. Reception without response.',
+    recogniseBy: 'They listen longer than anyone. Their recommendations feel like mirrors.',
+    strengths: ['Deep listening', 'Spatial awareness', 'Environmental design'],
+    roles: ['Listening room designer', 'Sound therapist', 'Ambient curator', 'Safe space holder'],
+    avoidTasking: 'Rapid output, aggressive promotion, competitive environments',
+    collaboratesWith: ['D-8', 'C-4'],
+    collaboratesWhy: 'Wick channels into the space you hold. Cull understands that emptiness is not absence.',
+    tensionWith: ['F-9'],
+    tensionWhy: 'Anvil demands output where you offer space, but their urgency pulls form from your silence.',
+    avoidWith: ['H-6'],
+    avoidWhy: 'Toll fills every space you create.',
+    growthToward: 'F-9',
+    growthWhy: 'Learning to generate. Reception without expression leaves no trace.',
+  },
+};
+
+// Mode descriptions — what each creative mode means in practice
+const MODE_DESC = {
+  Visionary: 'Sets standards others follow without explaining why.',
+  Architectural: 'Builds hidden systems beneath the surface of things.',
+  Prophetic: 'Identifies what matters before consensus forms.',
+  Curatorial: 'Preserves and resurfaces what others have forgotten.',
+  Reductive: 'Knows what to remove. Taste expressed through elimination.',
+  Connective: 'Draws unexpected links between things that should not cohere.',
+  Evangelical: 'Compelled to transmit. The cost of knowing is sharing.',
+  Archival: 'Guards deep knowledge. References others cannot access.',
+  Channelling: 'Receives and transmits signal without always knowing the source.',
+  Generative: 'Shapes raw material into form. Ships while others theorise.',
+  Contrarian: 'Productive disagreement. Fractures that create new paths.',
+  Receptive: 'Creates space for others. Taste expressed through listening.',
+};
 
 const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
   const [caption, setCaption] = useState('');
@@ -27,7 +267,24 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
   const [subtasteConnecting, setSubtasteConnecting] = useState(false);
   const [rescanningSubtaste, setRescanningSubtaste] = useState(false);
   const [subtasteSource, setSubtasteSource] = useState(null);
+  const [subtasteStagesCompleted, setSubtasteStagesCompleted] = useState([]);
+  const [subtasteUserIdRef, setSubtasteUserIdRef] = useState(null);
+  const [writingDnaData, setWritingDnaData] = useState(null);
+  const [connectingWritingDna, setConnectingWritingDna] = useState(false);
+  const [rescanningWritingDna, setRescanningWritingDna] = useState(false);
+  const [narrative, setNarrative] = useState(null);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
+  const [narrativeStale, setNarrativeStale] = useState(false);
+  const [driftTimeline, setDriftTimeline] = useState([]);
+  const [driftData, setDriftData] = useState(null);
+  const [driftSeason, setDriftSeason] = useState(null);
+  const [convictionData, setConvictionData] = useState(null);
   const [expandedCard, setExpandedCard] = useState(null);
+  const [syncStatus, setSyncStatus] = useState('idle'); // idle | syncing | synced | error
+  const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [showArchetypeDetails, setShowArchetypeDetails] = useState(false);
+  const [expandedDesignation, setExpandedDesignation] = useState(null);
+  const [expandedRow, setExpandedRow] = useState(null); // 'mode' | 'shadow' | 'growth' | null
 
   // --- Auto-connect on mount ---
   useEffect(() => {
@@ -43,6 +300,18 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
 
     // 3. Handle URL params from quiz redirect
     handleUrlParams();
+
+    // 4. Auto-connect WritingDNA from Ibis
+    fetchWritingDna();
+
+    // 5. Fetch cached narrative
+    fetchNarrative();
+
+    // 6. Fetch drift data
+    fetchDriftData();
+
+    // 7. Fetch conviction weights
+    fetchConvictionData();
   }, []);
 
   // --- URL param handling (quiz callback) ---
@@ -69,13 +338,24 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
     }
   }, []);
 
-  // --- Cached genome fetch (instant load) ---
+  // --- Cached genome fetch (instant load) + background sync ---
   const fetchCachedGenome = async () => {
     try {
       const response = await axios.get('/api/subtaste/genome/default_user/cached');
       if (response.data.success && response.data.genome) {
         setSubtasteData(response.data.genome?.archetype || response.data.genome);
         setSubtasteSource(response.data.source || 'cache');
+        if (response.data.stagesCompleted) {
+          setSubtasteStagesCompleted(response.data.stagesCompleted);
+        }
+        if (response.data.subtasteUserId) {
+          setSubtasteUserIdRef(response.data.subtasteUserId);
+        }
+        setLastSyncTime(response.data.cachedAt);
+
+        // Background sync: fetch fresh data from Subtaste to update cache
+        syncFromSubtaste(response.data.subtasteUserId);
+
         return true;
       }
     } catch {
@@ -85,6 +365,113 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
     // Fall back to auto-classification
     fetchAutoClassification();
     return false;
+  };
+
+  // --- Background sync with Subtaste (updates cache + UI) ---
+  const syncFromSubtaste = async (subtasteUserId) => {
+    if (!subtasteUserId) return;
+    setSyncStatus('syncing');
+    try {
+      const response = await axios.post('/api/subtaste/genome/default_user/rescan', {
+        subtaste_user_id: subtasteUserId,
+      });
+      if (response.data.success && response.data.genome) {
+        setSubtasteData(response.data.genome?.archetype || response.data.genome);
+        setSubtasteSource(response.data.source || 'quiz');
+        setLastSyncTime(new Date().toISOString());
+        setSyncStatus('synced');
+      } else {
+        setSyncStatus('synced'); // Cache is still valid
+      }
+    } catch {
+      setSyncStatus('error');
+    }
+  };
+
+  // --- Drift Detection ---
+  const fetchDriftData = async () => {
+    try {
+      const [timelineRes, driftRes, seasonRes] = await Promise.all([
+        axios.get('/api/identity/timeline/default_user'),
+        axios.get('/api/identity/drift/default_user?window=90'),
+        axios.get('/api/identity/season/default_user'),
+      ]);
+
+      if (timelineRes.data?.success) setDriftTimeline(timelineRes.data.timeline || []);
+      if (driftRes.data?.success) setDriftData(driftRes.data.drift || null);
+      if (seasonRes.data?.success) setDriftSeason(seasonRes.data.season || null);
+    } catch (err) {
+      console.error('Failed to fetch drift data:', err);
+    }
+  };
+
+  // --- Conviction Weights ---
+  const fetchConvictionData = async () => {
+    try {
+      const res = await axios.get('/api/identity/conviction/default_user');
+      if (res.data?.success) {
+        setConvictionData(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch conviction data:', err);
+    }
+  };
+
+  // --- Identity Narrative ---
+  const fetchNarrative = async () => {
+    try {
+      const res = await axios.get('/api/identity/narrative/default_user');
+      if (res.data?.success && res.data?.hasNarrative) {
+        setNarrative(res.data.narrative);
+        setNarrativeStale(res.data.isStale || false);
+      }
+    } catch (err) {
+      console.error('Failed to fetch narrative:', err);
+    }
+  };
+
+  const generateNarrative = async () => {
+    setNarrativeLoading(true);
+    try {
+      const res = await axios.post('/api/identity/narrative/default_user');
+      if (res.data?.success) {
+        setNarrative(res.data.narrative);
+        setNarrativeStale(false);
+      }
+    } catch (err) {
+      console.error('Failed to generate narrative:', err);
+    } finally {
+      setNarrativeLoading(false);
+    }
+  };
+
+  // --- WritingDNA from Ibis ---
+  const fetchWritingDna = async () => {
+    setConnectingWritingDna(true);
+    try {
+      const res = await axios.get('/api/writing-dna/ibis/default_user');
+      if (res.data?.success && res.data?.connected) {
+        setWritingDnaData(res.data.writingDNA);
+      }
+    } catch (err) {
+      console.error('Failed to fetch WritingDNA:', err);
+    } finally {
+      setConnectingWritingDna(false);
+    }
+  };
+
+  const handleRescanWritingDna = async () => {
+    setRescanningWritingDna(true);
+    try {
+      const res = await axios.post('/api/writing-dna/ibis/default_user/sync');
+      if (res.data?.success && res.data?.synced) {
+        setWritingDnaData(res.data.writingDNA);
+      }
+    } catch (err) {
+      console.error('Failed to rescan WritingDNA:', err);
+    } finally {
+      setRescanningWritingDna(false);
+    }
   };
 
   // --- Auto-connect Tizita (runs on mount, no button click needed) ---
@@ -197,14 +584,18 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
 
   const handleRescanSubtaste = async () => {
     setRescanningSubtaste(true);
+    setSyncStatus('syncing');
     try {
       const response = await axios.post('/api/subtaste/genome/default_user/rescan');
       if (response.data.success && response.data.genome) {
         setSubtasteData(response.data.genome?.archetype || response.data.genome);
         setSubtasteSource('quiz');
+        setLastSyncTime(new Date().toISOString());
+        setSyncStatus('synced');
       }
     } catch (err) {
       console.error('Subtaste rescan failed:', err);
+      setSyncStatus('error');
     } finally {
       setRescanningSubtaste(false);
     }
@@ -323,6 +714,7 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
 
   const archetypeGlyph = subtasteData?.primary?.glyph || subtasteData?.glyph;
   const titleCase = (s) => s ? s.charAt(0) + s.slice(1).toLowerCase() : '';
+  const hasVisualDNA = !!tizitaData && !tizitaData.error;
   const isInitialLoading = connectingTizita && !hasVisualDNA && !subtasteData;
 
   const colorSwatches = tizitaData?.visualDNA?.colorPalette?.length > 0 ? (
@@ -337,16 +729,32 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
       ))}
     </div>
   ) : null;
-
-  const hasVisualDNA = !!tizitaData && !tizitaData.error;
   const hasAudioDNA = totalTracks > 0;
   const hasLineage = !!projectDnaData;
   const nothingConnected = !subtasteData && !hasVisualDNA && !hasAudioDNA && !hasLineage;
 
   return (
     <div>
-      {/* Zone 1: Page Title */}
-      <h1 className="text-display-xl text-brand-text mb-4">Nommo</h1>
+      {/* Zone 1: Page Title + Sync Status */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-display-xl text-brand-text">Nommo</h1>
+        <div className="flex items-center gap-2" title={lastSyncTime ? `Last synced: ${new Date(lastSyncTime).toLocaleString()}` : 'Not synced'}>
+          <span
+            className={`w-2 h-2 rounded-full ${
+              syncStatus === 'synced' ? 'bg-green-500' :
+              syncStatus === 'syncing' ? 'bg-amber-400 animate-pulse' :
+              syncStatus === 'error' ? 'bg-red-500' :
+              'bg-brand-border'
+            }`}
+          />
+          <span className="text-body-sm text-brand-secondary font-mono">
+            {syncStatus === 'syncing' ? 'Syncing' :
+             syncStatus === 'synced' ? 'Synced' :
+             syncStatus === 'error' ? 'Offline' :
+             ''}
+          </span>
+        </div>
+      </div>
       {isInitialLoading ? (
         <div className="flex items-center gap-3 mb-16">
           <div className="w-4 h-4 border-2 border-brand-border border-t-brand-text rounded-full animate-spin" />
@@ -358,6 +766,89 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
         </p>
       ) : (
         <div className="mb-16" />
+      )}
+
+      {/* Identity Narrative (Nommo — the power of the word) */}
+      {(narrative || narrativeLoading) && (
+        <div className="border border-brand-text p-8 mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <p className="uppercase-label text-brand-secondary">Identity Portrait</p>
+            <div className="flex items-center gap-3">
+              {narrativeStale && !narrativeLoading && (
+                <span className="text-label text-brand-secondary">Signals changed</span>
+              )}
+              <button
+                onClick={generateNarrative}
+                disabled={narrativeLoading}
+                className="btn-secondary text-label px-3 py-1"
+              >
+                {narrativeLoading ? 'Generating...' : narrativeStale ? 'Regenerate' : 'Regenerate'}
+              </button>
+            </div>
+          </div>
+
+          {narrativeLoading && !narrative ? (
+            <div className="space-y-3 animate-pulse">
+              <div className="h-4 bg-brand-border rounded w-full" />
+              <div className="h-4 bg-brand-border rounded w-5/6" />
+              <div className="h-4 bg-brand-border rounded w-4/6" />
+              <div className="h-4 bg-brand-border rounded w-full mt-4" />
+              <div className="h-4 bg-brand-border rounded w-3/4" />
+            </div>
+          ) : (
+            <div className="font-display text-body leading-relaxed text-brand-text whitespace-pre-line">
+              {narrative}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Generate first narrative prompt (only if no narrative exists and signals connected) */}
+      {!narrative && !narrativeLoading && (subtasteData || tizitaData || totalTracks) && (
+        <div className="border border-dashed border-brand-border p-6 mb-12 text-center">
+          <p className="text-body text-brand-secondary mb-3">
+            Your identity signals are ready. Generate your portrait.
+          </p>
+          <button
+            onClick={generateNarrative}
+            className="btn-primary text-label px-6 py-2"
+          >
+            Speak Identity Into Existence
+          </button>
+        </div>
+      )}
+
+      {/* Identity Drift (only shows with > 1 snapshot) */}
+      <DriftPanel
+        drift={driftData}
+        timeline={driftTimeline}
+        season={driftSeason}
+      />
+
+      {/* Conviction Quality Badge */}
+      {convictionData && (
+        <div className="flex items-center justify-between mb-4">
+          <p className="uppercase-label text-brand-secondary">Identity Signals</p>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {Object.entries(convictionData.weights || {}).map(([key, w]) => (
+                <div
+                  key={key}
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor: w.present
+                      ? `rgba(10, 10, 10, ${0.3 + w.conviction * 0.7})`
+                      : '#E0E0E0',
+                  }}
+                  title={`${key}: ${w.present ? `${(w.conviction * 100).toFixed(0)}% conviction` : 'not connected'}`}
+                />
+              ))}
+            </div>
+            <span className="text-label text-brand-secondary">
+              {convictionData.qualityScore}% verified
+            </span>
+          </div>
+        </div>
       )}
 
       {/* Zone 2: Hub Card Grid */}
@@ -388,7 +879,7 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
               {/* Primary archetype */}
               <div className="border border-brand-border p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-display-sm">{subtasteData.primary?.symbol || ''}</span>
+                  <span className="text-display-sm">{GLYPH_MAP[subtasteData.primary?.designation]?.symbol || subtasteData.primary?.symbol || ''}</span>
                   <div>
                     <p className="text-body text-brand-text font-medium">
                       {titleCase(subtasteData.primary?.glyph || subtasteData.glyph || '')}
@@ -421,8 +912,8 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                 <div className="space-y-2">
                   {subtasteData.secondary && (
                     <div className="flex items-center gap-2 text-body-sm border border-brand-border p-3">
-                      <span className="text-brand-text font-mono">{subtasteData.secondary.symbol || ''}</span>
-                      <span className="text-brand-text">{titleCase(subtasteData.secondary.glyph || '')}</span>
+                      <span className="text-brand-text font-mono">{GLYPH_MAP[subtasteData.secondary.designation]?.symbol || subtasteData.secondary.symbol || ''}</span>
+                      <span className="text-brand-text">{titleCase(subtasteData.secondary.glyph || GLYPH_MAP[subtasteData.secondary.designation]?.glyph || '')}</span>
                       <span className="text-brand-secondary">{subtasteData.secondary.creativeMode}</span>
                       {subtasteData.secondary.confidence > 0.01 && (
                         <span className="ml-auto font-mono text-brand-secondary">
@@ -433,8 +924,8 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                   )}
                   {subtasteData.tertiary && (
                     <div className="flex items-center gap-2 text-body-sm border border-brand-border p-3 opacity-70">
-                      <span className="text-brand-text font-mono">{subtasteData.tertiary.symbol || ''}</span>
-                      <span className="text-brand-text">{titleCase(subtasteData.tertiary.glyph || '')}</span>
+                      <span className="text-brand-text font-mono">{GLYPH_MAP[subtasteData.tertiary.designation]?.symbol || subtasteData.tertiary.symbol || ''}</span>
+                      <span className="text-brand-text">{titleCase(subtasteData.tertiary.glyph || GLYPH_MAP[subtasteData.tertiary.designation]?.glyph || '')}</span>
                       <span className="text-brand-secondary">{subtasteData.tertiary.creativeMode}</span>
                       {subtasteData.tertiary.confidence > 0.01 && (
                         <span className="ml-auto font-mono text-brand-secondary">
@@ -446,51 +937,245 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                 </div>
               )}
 
-              {/* Archetype Distribution */}
-              {subtasteData.distribution && (
-                <div className="border border-brand-border p-4">
-                  <p className="uppercase-label text-brand-secondary mb-3">Archetype Distribution</p>
-                  <div className="space-y-1">
-                    {Object.entries(subtasteData.distribution)
-                      .sort(([, a], [, b]) => b - a)
-                      .slice(0, 6)
-                      .map(([designation, weight]) => (
-                        <div key={designation} className="flex items-center gap-2">
-                          <span className="text-body-sm text-brand-text font-mono w-8">{subtasteData.symbolMap?.[designation] || designation}</span>
-                          <div className="flex-1 h-2 bg-brand-border">
-                            <div
-                              className="h-2 bg-brand-text"
-                              style={{ width: `${Math.round(weight * 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-body-sm text-brand-secondary font-mono w-10 text-right">
-                            {Math.round(weight * 100)}%
-                          </span>
+              {/* Archetype Summary: clean, clear, not overwhelming */}
+              {(() => {
+                const primaryD = subtasteData.primary?.designation || subtasteData.designation;
+                const secondaryD = subtasteData.secondary?.designation;
+                const primaryInfo = GLYPH_MAP[primaryD];
+                const secondaryInfo = secondaryD ? GLYPH_MAP[secondaryD] : null;
+
+                const sortedDist = subtasteData.distribution
+                  ? Object.entries(subtasteData.distribution).sort(([, a], [, b]) => b - a)
+                  : [];
+
+                // Growth: defined per archetype (who you naturally develop toward)
+                const growthD = primaryInfo?.growthToward;
+                const growthInfo = growthD ? GLYPH_MAP[growthD] : null;
+
+                return (
+                  <div className="space-y-4">
+                    {/* Core: Dominant + Subdominant + Mode + Shadow + Growth */}
+                    <div className="space-y-1 text-body-sm">
+                      <div className="flex justify-between py-1">
+                        <span className="text-brand-secondary">Dominant</span>
+                        <span className="text-brand-text">{primaryInfo?.symbol} {titleCase(primaryInfo?.glyph)}</span>
+                      </div>
+                      {secondaryInfo && (
+                        <div className="flex justify-between py-1">
+                          <span className="text-brand-secondary">Subdominant</span>
+                          <span className="text-brand-text">{secondaryInfo?.symbol} {titleCase(secondaryInfo?.glyph)}</span>
                         </div>
-                      ))}
+                      )}
+                      {/* Mode — tappable */}
+                      <div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setExpandedRow(expandedRow === 'mode' ? null : 'mode'); }}
+                          className="flex justify-between w-full py-1 text-left"
+                        >
+                          <span className="text-brand-secondary">Mode</span>
+                          <span className="text-brand-text underline decoration-brand-border">{primaryInfo?.creativeMode}</span>
+                        </button>
+                        {expandedRow === 'mode' && (
+                          <p className="text-body-sm text-brand-secondary pl-2 pb-1">{MODE_DESC[primaryInfo?.creativeMode] || ''}</p>
+                        )}
+                      </div>
+                      {/* Shadow — tappable */}
+                      <div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setExpandedRow(expandedRow === 'shadow' ? null : 'shadow'); }}
+                          className="flex justify-between w-full py-1 text-left"
+                        >
+                          <span className="text-brand-secondary">Shadow</span>
+                          <span className="text-brand-text underline decoration-brand-border">{primaryInfo?.shadow?.split('.')[0]}</span>
+                        </button>
+                        {expandedRow === 'shadow' && (
+                          <p className="text-body-sm text-brand-secondary pl-2 pb-1">The risk when your dominant trait overextends. {primaryInfo?.shadow?.split('.').slice(1).join('.').trim()}</p>
+                        )}
+                      </div>
+                      {/* Complement — the archetype that balances your blind spots */}
+                      {growthInfo && (
+                        <div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setExpandedRow(expandedRow === 'growth' ? null : 'growth'); }}
+                            className="flex justify-between w-full py-1 text-left"
+                          >
+                            <span className="text-brand-secondary">Complement</span>
+                            <span className="text-brand-text underline decoration-brand-border">{growthInfo.symbol} {titleCase(growthInfo.glyph)}</span>
+                          </button>
+                          {expandedRow === 'growth' && (
+                            <p className="text-body-sm text-brand-secondary pl-2 pb-1">{primaryInfo?.growthWhy}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Essence */}
+                    <p className="text-body-sm text-brand-secondary italic border-t border-brand-border pt-3">
+                      {primaryInfo?.essence}
+                    </p>
+
+                    {/* See more toggle */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowArchetypeDetails(!showArchetypeDetails); }}
+                      className="text-body-sm text-brand-text underline"
+                    >
+                      {showArchetypeDetails ? 'See less' : 'See more'}
+                    </button>
+
+                    {showArchetypeDetails && (
+                      <div className="space-y-4 border-t border-brand-border pt-3">
+                        {/* Recognise By */}
+                        {primaryInfo?.recogniseBy && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Recognise by</p>
+                            <p className="text-body-sm text-brand-secondary">{primaryInfo.recogniseBy}</p>
+                          </div>
+                        )}
+
+                        {/* Strengths + Roles */}
+                        {primaryInfo?.strengths?.length > 0 && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Strengths</p>
+                            <p className="text-body-sm text-brand-text">{primaryInfo.strengths.join(', ')}</p>
+                          </div>
+                        )}
+                        {primaryInfo?.roles?.length > 0 && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Natural roles</p>
+                            <p className="text-body-sm text-brand-text">{primaryInfo.roles.join(', ')}</p>
+                          </div>
+                        )}
+                        {primaryInfo?.avoidTasking && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Avoid tasking with</p>
+                            <p className="text-body-sm text-brand-secondary">{primaryInfo.avoidTasking}</p>
+                          </div>
+                        )}
+
+                        {/* Collaborate */}
+                        {primaryInfo?.collaboratesWith?.length > 0 && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Collaborate with</p>
+                            <p className="text-body-sm text-brand-text mb-1">
+                              {primaryInfo.collaboratesWith.map(d => `${GLYPH_MAP[d]?.symbol} ${titleCase(GLYPH_MAP[d]?.glyph)}`).join(', ')}
+                            </p>
+                            <p className="text-body-sm text-brand-secondary">{primaryInfo.collaboratesWhy}</p>
+                          </div>
+                        )}
+
+                        {/* Productive tension */}
+                        {primaryInfo?.tensionWith?.length > 0 && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Productive tension</p>
+                            <p className="text-body-sm text-brand-text mb-1">
+                              {primaryInfo.tensionWith.map(d => `${GLYPH_MAP[d]?.symbol} ${titleCase(GLYPH_MAP[d]?.glyph)}`).join(', ')}
+                            </p>
+                            <p className="text-body-sm text-brand-secondary">{primaryInfo.tensionWhy}</p>
+                          </div>
+                        )}
+
+                        {/* Avoid */}
+                        {primaryInfo?.avoidWith?.length > 0 && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Friction</p>
+                            <p className="text-body-sm text-brand-text mb-1">
+                              {primaryInfo.avoidWith.map(d => `${GLYPH_MAP[d]?.symbol} ${titleCase(GLYPH_MAP[d]?.glyph)}`).join(', ')}
+                            </p>
+                            <p className="text-body-sm text-brand-secondary">{primaryInfo.avoidWhy}</p>
+                          </div>
+                        )}
+
+                        {/* Complement — the archetype that balances your blind spots */}
+                        {growthInfo && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Complement</p>
+                            <p className="text-body-sm text-brand-text mb-1">{growthInfo.symbol} {titleCase(growthInfo.glyph)}</p>
+                            <p className="text-body-sm text-brand-secondary">{primaryInfo?.growthWhy}</p>
+                          </div>
+                        )}
+
+                        {/* Full shadow detail */}
+                        <div>
+                          <p className="uppercase-label text-brand-secondary mb-1">Shadow (full)</p>
+                          <p className="text-body-sm text-brand-secondary">{primaryInfo?.shadow}</p>
+                        </div>
+
+                        {/* Subdominant detail */}
+                        {secondaryInfo && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-1">Subdominant shadow</p>
+                            <p className="text-body-sm text-brand-secondary">{secondaryInfo.shadow}</p>
+                          </div>
+                        )}
+
+                        {/* Distribution — clickable items */}
+                        {subtasteData.distribution && (
+                          <div>
+                            <p className="uppercase-label text-brand-secondary mb-2">Distribution</p>
+                            <div className="space-y-1">
+                              {sortedDist
+                                .slice(0, 6)
+                                .map(([designation, weight]) => {
+                                  const info = GLYPH_MAP[designation];
+                                  const isExpanded = expandedDesignation === designation;
+                                  return (
+                                    <div key={designation}>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedDesignation(isExpanded ? null : designation);
+                                        }}
+                                        className="flex items-center gap-2 w-full text-left hover:bg-void-subtle transition-colors py-0.5"
+                                      >
+                                        <span className="text-body-sm text-brand-text font-mono w-20">{info?.symbol || ''} {titleCase(info?.glyph || designation)}</span>
+                                        <div className="flex-1 h-2 bg-brand-border">
+                                          <div className="h-2 bg-brand-text" style={{ width: `${Math.round(weight * 100)}%` }} />
+                                        </div>
+                                        <span className="text-body-sm text-brand-secondary font-mono w-10 text-right">{Math.round(weight * 100)}%</span>
+                                      </button>
+                                      {isExpanded && info && (
+                                        <div className="ml-4 pl-4 border-l border-brand-border py-2 space-y-1">
+                                          <p className="text-body-sm text-brand-secondary italic">{info.essence}</p>
+                                          <p className="text-body-sm text-brand-secondary">{info.creativeMode} mode</p>
+                                          <p className="text-body-sm text-bone-faint">Shadow: {info.shadow?.split('.')[0]}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Source + Refine */}
               <div className="flex items-center justify-between pt-2 border-t border-brand-border">
                 <span className="uppercase-label text-brand-secondary">
-                  {subtasteSource === 'quiz' ? 'Quiz-validated' :
-                   subtasteSource === 'cache' ? 'Cached' : 'Auto-classified'}
+                  {subtasteSource === 'quiz' ? 'Calibrated' :
+                   subtasteSource === 'cache' ? 'Cached' : 'Provisional'}
                 </span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     const quizUrl = process.env.REACT_APP_SUBTASTE_URL || 'http://localhost:3001';
                     const callback = encodeURIComponent(window.location.origin + '/');
-                    // Pass existing user ID so quiz can skip intro if profile exists
-                    const userId = subtasteData?.userId || '';
-                    const userParam = userId ? `&userId=${userId}` : '';
-                    window.location.href = `${quizUrl}/quiz?callback=${callback}${userParam}`;
+                    const uidParam = subtasteUserIdRef ? `&userId=${subtasteUserIdRef}` : '';
+                    // If user has any genome data, they're a returning user → profile for refinement
+                    // If no data at all, send to fresh quiz
+                    const isReturningUser = !!subtasteData;
+                    if (isReturningUser) {
+                      window.location.href = `${quizUrl}/profile?callback=${callback}${uidParam}`;
+                    } else {
+                      window.location.href = `${quizUrl}/quiz?callback=${callback}${uidParam}`;
+                    }
                   }}
                   className="text-body-sm text-brand-text underline"
                 >
-                  {subtasteSource === 'quiz' ? 'Retake quiz' : 'Refine with quiz'}
+                  {subtasteData ? 'Refine' : 'Begin calibration'}
                 </button>
               </div>
             </div>
@@ -681,6 +1366,121 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
             <ProjectDNAPanel embedded onScanComplete={handleProjectDnaScanComplete} />
             <LineageDiscoveries userId="default" projectDnaData={projectDnaData} />
           </div>
+        </HubCard>
+
+        {/* Card 5 — Writing DNA (from Ibis) */}
+        <HubCard
+          label="Writing DNA"
+          stat={writingDnaData ? (writingDnaData.patterns?.tone?.[0] || 'Analyzed') : null}
+          statLabel={
+            writingDnaData
+              ? `${writingDnaData.wordCount?.toLocaleString() || 0} words`
+              : null
+          }
+          connected={!!writingDnaData}
+          onConnect={fetchWritingDna}
+          connectLabel={connectingWritingDna ? 'Connecting...' : 'Connect Ibis'}
+          onRescan={writingDnaData ? handleRescanWritingDna : undefined}
+          rescanning={rescanningWritingDna}
+          expanded={expandedCard === 'writing'}
+          onToggle={() => toggleCard('writing')}
+          accentElement={writingDnaData?.patterns?.metaphorDensity ? (
+            <span className="text-body-sm text-brand-secondary italic">
+              {writingDnaData.patterns.metaphorDensity} metaphor
+            </span>
+          ) : null}
+        >
+          {writingDnaData && (
+            <div className="space-y-6">
+              {/* Voice signature */}
+              {writingDnaData.signature && (
+                <div className="border border-brand-border p-4">
+                  <p className="uppercase-label text-brand-secondary mb-2">Voice Signature</p>
+                  <p className="font-display text-body leading-relaxed text-brand-text">
+                    {writingDnaData.signature}
+                  </p>
+                </div>
+              )}
+
+              {/* Quantitative metrics */}
+              {writingDnaData.metrics && (
+                <div>
+                  <p className="uppercase-label text-brand-secondary mb-3">Metrics</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-display-md text-brand-text">{writingDnaData.metrics.avgSentenceLength?.toFixed(1)}</p>
+                      <p className="text-label text-brand-secondary">avg sentence length</p>
+                    </div>
+                    <div>
+                      <p className="text-display-md text-brand-text">{((writingDnaData.metrics.typeTokenRatio || 0) * 100).toFixed(0)}%</p>
+                      <p className="text-label text-brand-secondary">vocabulary diversity</p>
+                    </div>
+                    <div>
+                      <p className="text-display-md text-brand-text">{((writingDnaData.metrics.dialogueRatio || 0) * 100).toFixed(0)}%</p>
+                      <p className="text-label text-brand-secondary">dialogue ratio</p>
+                    </div>
+                    <div>
+                      <p className="text-display-md text-brand-text">{writingDnaData.metrics.avgParagraphLength?.toFixed(0)}</p>
+                      <p className="text-label text-brand-secondary">avg paragraph length</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Qualitative patterns */}
+              {writingDnaData.patterns && (
+                <div>
+                  <p className="uppercase-label text-brand-secondary mb-3">Patterns</p>
+                  <div className="space-y-3">
+                    {writingDnaData.patterns.tone?.length > 0 && (
+                      <div>
+                        <p className="text-body-sm text-brand-secondary">Tone</p>
+                        <p className="text-body text-brand-text">{writingDnaData.patterns.tone.join(', ')}</p>
+                      </div>
+                    )}
+                    {writingDnaData.patterns.cadence && (
+                      <div>
+                        <p className="text-body-sm text-brand-secondary">Cadence</p>
+                        <p className="text-body text-brand-text">{writingDnaData.patterns.cadence}</p>
+                      </div>
+                    )}
+                    {writingDnaData.patterns.syntaxSignature && (
+                      <div>
+                        <p className="text-body-sm text-brand-secondary">Syntax</p>
+                        <p className="text-body text-brand-text">{writingDnaData.patterns.syntaxSignature}</p>
+                      </div>
+                    )}
+                    {writingDnaData.patterns.narrativeVoice && (
+                      <div>
+                        <p className="text-body-sm text-brand-secondary">Narrative voice</p>
+                        <p className="text-body text-brand-text">{writingDnaData.patterns.narrativeVoice}</p>
+                      </div>
+                    )}
+                    {writingDnaData.patterns.recurringMotifs?.length > 0 && (
+                      <div>
+                        <p className="text-body-sm text-brand-secondary">Motifs</p>
+                        <p className="text-body text-brand-text">{writingDnaData.patterns.recurringMotifs.join(', ')}</p>
+                      </div>
+                    )}
+                    {writingDnaData.patterns.influences?.length > 0 && (
+                      <div>
+                        <p className="text-body-sm text-brand-secondary">Influences</p>
+                        <p className="text-body text-brand-text">{writingDnaData.patterns.influences.join(', ')}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Source info */}
+              <div className="border-t border-brand-border pt-3">
+                <p className="text-label text-brand-secondary">
+                  {writingDnaData.analyzedDocumentCount} documents analyzed
+                  {writingDnaData.fetchedAt && ` · synced ${new Date(writingDnaData.fetchedAt).toLocaleDateString()}`}
+                </p>
+              </div>
+            </div>
+          )}
         </HubCard>
       </div>
 

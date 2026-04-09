@@ -16,6 +16,7 @@ const projectDnaService = require('../services/projectDnaService');
 const subtasteService = require('../services/subtasteService');
 const tizitaDirectService = require('../services/tizitaServiceDirect');
 const artMovementClassifier = require('../services/artMovementClassifier');
+const subtasteGenomeCache = require('../services/subtasteGenomeCache');
 
 // Audio database connection
 const audioDbPath = path.join(__dirname, '../../starforge_audio.db');
@@ -291,17 +292,46 @@ router.get('/context/:userId', async (req, res) => {
     // Get Project DNA (highest-conviction identity signal — auto-scans once if not cached)
     const projectDna = await projectDnaService.getOrScanProjectDNA(userId === 'default_user' ? 'default' : userId);
 
-    // Run Subtaste classification from available signals
-    const visualChars = visualDna?.visual_characteristics || null;
-    const subtasteResult = subtasteService.classifyUser({
-      audioDNA: audioDna,
-      visualDNA: visualChars ? {
-        warmth: visualChars.warmth,
-        energy: visualChars.energy,
-        themes: visualChars.themes,
-      } : null,
-      projectDNA: projectDna,
-    });
+    // Prefer cached quiz genome (actual Subtaste quiz results), fall back to local classification
+    const cachedGenome = subtasteGenomeCache.getCache(userId === 'default_user' ? 'default_user' : userId);
+    let subtasteResult = null;
+
+    if (cachedGenome && cachedGenome.primary?.designation) {
+      // Use real quiz data from cache — reconstruct archetype shape from genome JSON
+      const genome = cachedGenome.genome || {};
+      const archetype = genome.archetype || {};
+      subtasteResult = {
+        classification: {
+          primary: archetype.primary || cachedGenome.primary,
+          secondary: archetype.secondary || cachedGenome.secondary || null,
+          tertiary: archetype.tertiary || null,
+          distribution: archetype.distribution || cachedGenome.distribution || null,
+        },
+        psychometrics: cachedGenome.psychometrics || genome.psychometrics || null,
+        source: cachedGenome.source || 'cache',
+        signalCount: cachedGenome.signalCount || 0,
+        stagesCompleted: cachedGenome.stagesCompleted || [],
+      };
+    } else {
+      // Fall back to local classification from available signals
+      const visualChars = visualDna?.visual_characteristics || null;
+      const localResult = subtasteService.classifyUser({
+        audioDNA: audioDna,
+        visualDNA: visualChars ? {
+          warmth: visualChars.warmth,
+          energy: visualChars.energy,
+          themes: visualChars.themes,
+        } : null,
+        projectDNA: projectDna,
+      });
+      if (localResult) {
+        subtasteResult = {
+          classification: localResult.classification,
+          psychometrics: localResult.psychometrics,
+          source: 'auto',
+        };
+      }
+    }
 
     // Build Twin OS context
     const context = {
@@ -335,7 +365,10 @@ router.get('/context/:userId', async (req, res) => {
       project_dna: projectDna || null,
       subtaste: subtasteResult ? {
         archetype: subtasteResult.classification,
-        psychometrics: subtasteResult.psychometrics,
+        psychometrics: subtasteResult.psychometrics || null,
+        source: subtasteResult.source || 'auto',
+        signalCount: subtasteResult.signalCount || 0,
+        stagesCompleted: subtasteResult.stagesCompleted || [],
       } : null,
       content_guidance: {
         visual_direction: deriveVisualDirection(visualDna, deepAnalysis),

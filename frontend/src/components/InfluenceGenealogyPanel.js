@@ -123,7 +123,7 @@ const InfluenceGenealogyPanel = ({ userId = 'default_user' }) => {
         <p className="text-body-sm text-red-400 mb-3">{error}</p>
         <button
           onClick={handleRefresh}
-          className="px-4 py-2 text-xs uppercase tracking-wider border border-brand-border hover:border-brand-primary transition-colors"
+          className="px-4 py-2 text-xs capitalize tracking-wider border border-brand-border hover:border-brand-primary transition-colors"
         >
           Retry
         </button>
@@ -141,7 +141,7 @@ const InfluenceGenealogyPanel = ({ userId = 'default_user' }) => {
         </div>
         <button
           onClick={handleRefresh}
-          className="px-4 py-2 text-xs uppercase tracking-wider border border-brand-border hover:border-brand-primary transition-colors"
+          className="px-4 py-2 text-xs capitalize tracking-wider border border-brand-border hover:border-brand-primary transition-colors"
         >
           Refresh
         </button>
@@ -151,7 +151,7 @@ const InfluenceGenealogyPanel = ({ userId = 'default_user' }) => {
       <div className="flex gap-0 mb-4 border-b border-brand-border">
         <button
           onClick={() => setAnalysisMode('hybrid')}
-          className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+          className={`px-4 py-2 text-xs capitalize tracking-wider transition-all ${
             analysisMode === 'hybrid'
               ? 'text-brand-primary border-b-2 border-brand-primary'
               : 'text-brand-secondary hover:text-brand-text'
@@ -161,7 +161,7 @@ const InfluenceGenealogyPanel = ({ userId = 'default_user' }) => {
         </button>
         <button
           onClick={() => setAnalysisMode('dj')}
-          className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+          className={`px-4 py-2 text-xs capitalize tracking-wider transition-all ${
             analysisMode === 'dj'
               ? 'text-brand-primary border-b-2 border-brand-primary'
               : 'text-brand-secondary hover:text-brand-text'
@@ -171,7 +171,7 @@ const InfluenceGenealogyPanel = ({ userId = 'default_user' }) => {
         </button>
         <button
           onClick={() => setAnalysisMode('original')}
-          className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+          className={`px-4 py-2 text-xs capitalize tracking-wider transition-all ${
             analysisMode === 'original'
               ? 'text-brand-primary border-b-2 border-brand-primary'
               : 'text-brand-secondary hover:text-brand-text'

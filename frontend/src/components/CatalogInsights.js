@@ -93,7 +93,7 @@ const CatalogInsights = ({ userId = 'default_user' }) => {
           <div className="flex gap-0">
             <button
               onClick={() => setCatalogMode('hybrid')}
-              className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 text-xs capitalize tracking-wider transition-all ${
                 catalogMode === 'hybrid'
                   ? 'text-brand-text border-b-2 border-brand-text'
                   : 'text-brand-secondary hover:text-brand-text'
@@ -103,7 +103,7 @@ const CatalogInsights = ({ userId = 'default_user' }) => {
             </button>
             <button
               onClick={() => setCatalogMode('dj')}
-              className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 text-xs capitalize tracking-wider transition-all ${
                 catalogMode === 'dj'
                   ? 'text-brand-text border-b-2 border-brand-text'
                   : 'text-brand-secondary hover:text-brand-text'
@@ -113,7 +113,7 @@ const CatalogInsights = ({ userId = 'default_user' }) => {
             </button>
             <button
               onClick={() => setCatalogMode('original')}
-              className={`px-4 py-2 text-xs uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 text-xs capitalize tracking-wider transition-all ${
                 catalogMode === 'original'
                   ? 'text-brand-text border-b-2 border-brand-text'
                   : 'text-brand-secondary hover:text-brand-text'

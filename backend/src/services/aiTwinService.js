@@ -6,6 +6,7 @@ const visualDnaCache = require('./visualDnaCache');
 const tizitaService = require('./tizitaServiceDirect');
 const projectDnaService = require('./projectDnaService');
 const subtasteService = require('./subtasteService');
+const ibisService = require('./ibisService');
 
 /**
  * AI Twin Service
@@ -75,15 +76,24 @@ class AITwinService {
       // Get Writing Samples for voice training
       const writingSamples = this.getWritingSamples(userId);
 
+      // Get WritingDNA from Ibis (5th identity signal)
+      let writingDNA = null;
+      try {
+        writingDNA = await ibisService.getCached(userId);
+      } catch (err) {
+        console.warn('[aiTwin] Failed to fetch WritingDNA:', err.message);
+      }
+
       // Get Project DNA (highest-conviction identity signal)
       const projectDNA = projectDnaService.getProjectDNA(userId === 'default_user' ? 'default' : userId);
 
-      // Run Subtaste classification from all available signals
+      // Run Subtaste classification from all available signals (now includes WritingDNA)
       const subtasteResult = subtasteService.classifyUser({
         audioDNA: audioDNA,
         visualDNA: visualDNA,
         writingSamples: writingSamples,
         projectDNA: projectDNA,
+        writingDNA: writingDNA,
       });
 
       return {
@@ -104,6 +114,7 @@ class AITwinService {
           themes: visualDNA.dominantThemes?.slice(0, 5)
         } : null,
         writingSamples: writingSamples,
+        writingDNA: writingDNA,
         projectDNA: projectDNA,
         subtaste: subtasteResult?.classification || null,
       };
@@ -117,7 +128,7 @@ class AITwinService {
    * Build context prompt from aesthetic DNA
    */
   buildAestheticContext(aestheticDNA) {
-    const { audio, visual, writingSamples, projectDNA, subtaste } = aestheticDNA;
+    const { audio, visual, writingSamples, writingDNA, projectDNA, subtaste } = aestheticDNA;
 
     let context = '';
 
@@ -208,6 +219,31 @@ class AITwinService {
       context += `- Use structure/clarity from social posts (presentable)\n`;
       context += `- NO formal language: "sophisticated tastemaker", "discerning purveyor", "impeccable taste"\n`;
       context += `- Write like THEM, not a marketing agency\n\n`;
+    }
+
+    // WritingDNA (from Ibis — analyzed writing voice)
+    if (writingDNA) {
+      context += 'WRITING VOICE (from Ibis analysis — strongest voice signal):\n';
+      if (writingDNA.signature) {
+        context += `Voice Signature: ${writingDNA.signature}\n\n`;
+      }
+      if (writingDNA.patterns) {
+        const p = writingDNA.patterns;
+        if (p.tone?.length) context += `Tone: ${p.tone.join(', ')}\n`;
+        if (p.cadence) context += `Cadence: ${p.cadence}\n`;
+        if (p.syntaxSignature) context += `Syntax: ${p.syntaxSignature}\n`;
+        if (p.narrativeVoice) context += `Narrative voice: ${p.narrativeVoice}\n`;
+        if (p.recurringMotifs?.length) context += `Motifs: ${p.recurringMotifs.join(', ')}\n`;
+        if (p.influences?.length) context += `Writing influences: ${p.influences.join(', ')}\n`;
+        if (p.metaphorDensity) context += `Metaphor density: ${p.metaphorDensity}\n`;
+      }
+      if (writingDNA.metrics) {
+        const m = writingDNA.metrics;
+        context += `Metrics: ${m.avgSentenceLength?.toFixed(1) || '?'}w avg sentence, `;
+        context += `${(m.typeTokenRatio * 100)?.toFixed(0) || '?'}% vocab diversity, `;
+        context += `${m.totalWords || '?'} total words analyzed\n`;
+      }
+      context += '\n';
     }
 
     return context;
@@ -476,6 +512,205 @@ Write the bio now:`;
     } catch (error) {
       console.error('Error saving generation history:', error);
     }
+  }
+
+  // ============================================================================
+  // IDENTITY NARRATIVE (Nommo — the power of the word)
+  // ============================================================================
+
+  /**
+   * Ensure identity_narratives table exists
+   */
+  _ensureNarrativeTable() {
+    const db = new Database(path.join(__dirname, '../../starforge_identity.db'));
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS identity_narratives (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        narrative_text TEXT NOT NULL,
+        signals_hash TEXT,
+        model_used TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+      CREATE INDEX IF NOT EXISTS idx_narrative_user ON identity_narratives(user_id, created_at DESC);
+    `);
+    db.close();
+  }
+
+  /**
+   * Generate a 2-3 paragraph identity portrait from ALL signals.
+   * Uses Claude Sonnet (not Haiku) for narrative quality.
+   * This is the viral mechanic — people share this.
+   */
+  async generateIdentityNarrative(userId) {
+    try {
+      const aestheticDNA = await this.getAestheticDNA(userId);
+
+      if (!aestheticDNA.available) {
+        return {
+          success: false,
+          error: 'Insufficient identity signals. Connect at least one data source.',
+        };
+      }
+
+      const context = this.buildAestheticContext(aestheticDNA);
+      const signalsHash = this._computeSignalsHash(aestheticDNA);
+
+      const prompt = `You are Nommo — the Dogon concept of the power of the word to create reality.
+
+From these signals about a creator, write a 2-3 paragraph identity portrait. Speak their identity into existence.
+
+Rules:
+- This is NOT a personality type description. It's a mirror.
+- Use their actual vocabulary and rhythm if WritingDNA is available.
+- Reference their specific music genres, visual themes, project names — not abstractions.
+- Name creative tensions as strengths, not contradictions.
+- If their writing style is terse, be terse. If it's lush, be lush. Match them.
+- Make it something they'd screenshot and share.
+- NO personality jargon ("INFJ", "openness score 78%")
+- NO marketing speak ("sophisticated tastemaker", "discerning purveyor")
+- NO generic AI voice. Write like a perceptive friend who truly sees them.
+- 150-250 words. Dense, not padded.
+
+Example of the tone (do NOT copy, just match the quality):
+"You build at the intersection of what shouldn't work together. Your sonic palette pulls from the deep sub-bass of grime but your visual taste reaches toward the clean geometry of De Stijl. This isn't contradiction — it's a controlled collision. You don't follow taste; you manufacture friction and extract meaning from the sparks."
+
+CREATOR SIGNALS:
+${context}`;
+
+      // Use Claude Sonnet for narrative quality (upgrade from default Haiku)
+      const narrativeText = await this._callClaudeSonnet(prompt);
+
+      // Save to database
+      this._ensureNarrativeTable();
+      const identityDb = new Database(path.join(__dirname, '../../starforge_identity.db'));
+      identityDb.prepare(`
+        INSERT INTO identity_narratives (user_id, narrative_text, signals_hash, model_used)
+        VALUES (?, ?, ?, ?)
+      `).run(userId, narrativeText, signalsHash, 'claude-sonnet-4-5-20250929');
+      identityDb.close();
+
+      return {
+        success: true,
+        narrative: narrativeText,
+        signalsHash,
+        signalsUsed: {
+          audio: !!aestheticDNA.audio,
+          visual: !!aestheticDNA.visual,
+          writingDNA: !!aestheticDNA.writingDNA,
+          writingSamples: !!aestheticDNA.writingSamples,
+          projectDNA: !!aestheticDNA.projectDNA,
+          subtaste: !!aestheticDNA.subtaste,
+        },
+      };
+    } catch (error) {
+      console.error('[narrative] Error generating identity narrative:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get the latest cached narrative for a user.
+   */
+  getLatestNarrative(userId) {
+    try {
+      this._ensureNarrativeTable();
+      const db = new Database(path.join(__dirname, '../../starforge_identity.db'));
+      const row = db.prepare(`
+        SELECT * FROM identity_narratives
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).get(userId);
+      db.close();
+
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        narrative: row.narrative_text,
+        signalsHash: row.signals_hash,
+        model: row.model_used,
+        createdAt: row.created_at,
+      };
+    } catch (error) {
+      console.error('[narrative] Error getting latest:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Get narrative history for drift comparison.
+   */
+  getNarrativeHistory(userId, limit = 10) {
+    try {
+      this._ensureNarrativeTable();
+      const db = new Database(path.join(__dirname, '../../starforge_identity.db'));
+      const rows = db.prepare(`
+        SELECT * FROM identity_narratives
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `).all(userId, limit);
+      db.close();
+
+      return rows.map(row => ({
+        id: row.id,
+        narrative: row.narrative_text,
+        signalsHash: row.signals_hash,
+        model: row.model_used,
+        createdAt: row.created_at,
+      }));
+    } catch (error) {
+      console.error('[narrative] Error getting history:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Call Claude Sonnet specifically (higher quality than Haiku for narrative generation).
+   */
+  async _callClaudeSonnet(prompt) {
+    const response = await axios.post(
+      'https://api.anthropic.com/v1/messages',
+      {
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      },
+      {
+        headers: {
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+      }
+    );
+    return response.data.content[0].text;
+  }
+
+  /**
+   * Compute a simple hash of current signals for cache invalidation.
+   */
+  _computeSignalsHash(aestheticDNA) {
+    const parts = [
+      aestheticDNA.audio?.trackCount || 0,
+      aestheticDNA.audio?.tasteCoherence || 0,
+      aestheticDNA.visual?.styleDescription || '',
+      aestheticDNA.writingDNA?.version || 0,
+      aestheticDNA.writingDNA?.wordCount || 0,
+      aestheticDNA.subtaste?.primary?.designation || '',
+      aestheticDNA.projectDNA?.confidence || 0,
+    ];
+    // Simple string hash
+    const str = parts.join('|');
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash |= 0;
+    }
+    return hash.toString(36);
   }
 
   // Helper description methods

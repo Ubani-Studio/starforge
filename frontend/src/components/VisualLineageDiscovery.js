@@ -7,7 +7,7 @@ import axios from 'axios';
  * Shows visual era, movement affinities, and hex color recommendations.
  * B&W. Sharp. Same aesthetic as LineageDiscoveries.
  */
-const VisualLineageDiscovery = ({ colorPalette = [] }) => {
+const VisualLineageDiscovery = ({ colorPalette = [], userId = 'default_user' }) => {
   const [result, setResult] = useState(null);
   const [discovering, setDiscovering] = useState(false);
   const [error, setError] = useState(null);
@@ -26,7 +26,7 @@ const VisualLineageDiscovery = ({ colorPalette = [] }) => {
     setError(null);
     try {
       const hexes = colorPalette.map(c => (typeof c === 'string' ? c : c.hex));
-      const res = await axios.post('/api/expansion/visual-lineage', { palette: hexes });
+      const res = await axios.post('/api/expansion/visual-lineage', { palette: hexes, userId });
       if (res.data.success) {
         setResult(res.data);
       } else {
@@ -116,6 +116,9 @@ const VisualLineageDiscovery = ({ colorPalette = [] }) => {
                     <div className="flex items-center gap-2">
                       <p className="text-body-sm text-brand-text">{m.name}</p>
                       <span className="text-body-xs text-brand-secondary">{m.region}</span>
+                      {m.boosted && (
+                        <span className="text-body-xs text-brand-secondary opacity-60" title="Amplified by Project DNA or high-signal photos">*</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-body-sm font-mono text-brand-text">{m.affinity}%</span>

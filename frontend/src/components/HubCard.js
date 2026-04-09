@@ -12,6 +12,9 @@ const HubCard = ({
   connected = false,
   onConnect,
   connectLabel = 'Connect',
+  onRescan,
+  rescanLabel = 'Rescan',
+  rescanning = false,
   children,
   expanded = false,
   onToggle,
@@ -51,10 +54,21 @@ const HubCard = ({
             )}
           </div>
           {connected && (
-            <div className={`transition-transform duration-300 mt-1 ${expanded ? 'rotate-90' : ''}`}>
-              <svg width="16" height="16" viewBox="0 0 16 16" className="text-brand-secondary">
-                <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" />
-              </svg>
+            <div className="flex items-center gap-3 mt-1">
+              {onRescan && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onRescan(); }}
+                  disabled={rescanning}
+                  className="text-body-sm text-brand-secondary hover:text-brand-text transition-colors disabled:opacity-50"
+                >
+                  {rescanning ? 'Rescanning...' : rescanLabel}
+                </button>
+              )}
+              <div className={`transition-transform duration-300 ${expanded ? 'rotate-90' : ''}`}>
+                <svg width="16" height="16" viewBox="0 0 16 16" className="text-brand-secondary">
+                  <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                </svg>
+              </div>
             </div>
           )}
         </div>
@@ -71,7 +85,7 @@ const HubCard = ({
         style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
       >
         <div className="overflow-hidden">
-          <div className="px-6 pb-6 pt-0" ref={contentRef}>
+          <div className="px-6 pb-6 pt-0" ref={contentRef} onClick={e => e.stopPropagation()}>
             <div className="pt-6 border-t border-brand-border">
               {children}
             </div>

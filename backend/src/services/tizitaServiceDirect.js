@@ -203,7 +203,10 @@ class TizitaDirectService {
       }
 
       // Check cache first (unless force refresh)
-      if (!forceRefresh) {
+      if (forceRefresh) {
+        visualDnaCache.invalidateCache(userId);
+        console.log('Force refresh: invalidated Visual DNA cache');
+      } else {
         const cachedDNA = visualDnaCache.getCached(userId, allPhotos);
         if (cachedDNA) {
           console.log(`Using cached Visual DNA (${cachedDNA.cacheAge} minutes old)`);

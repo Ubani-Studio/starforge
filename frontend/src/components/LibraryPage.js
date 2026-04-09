@@ -29,9 +29,8 @@ const LibraryPage = () => {
     <div className="min-h-screen bg-brand-bg p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-display-xl text-brand-text mb-8">Music Library</h1>
-        </div>
+        <h1 className="text-display-xl text-brand-text mb-4">Music Library</h1>
+        <div className="mb-12" />
 
         {/* Tab Navigation */}
         <div className="flex gap-4 mb-6 border-b border-brand-border">

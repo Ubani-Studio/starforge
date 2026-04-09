@@ -381,7 +381,7 @@ function classify(psychometrics, config = {}) {
  * @param {object} [params.projectDNA] - From projectDnaService
  * @returns {object} Psychometric profile ready for classify()
  */
-function buildPsychometrics({ audioDNA, visualDNA, writingSamples, projectDNA } = {}) {
+function buildPsychometrics({ audioDNA, visualDNA, writingSamples, projectDNA, writingDNA } = {}) {
   const profile = getDefaultPsychometrics();
 
   // Audio DNA → MUSIC model dimensions
@@ -446,6 +446,56 @@ function buildPsychometrics({ audioDNA, visualDNA, writingSamples, projectDNA } 
     }
   }
 
+  // WritingDNA (from Ibis) → rich psychometric signal from actual writing behavior
+  if (writingDNA && writingDNA.metrics) {
+    const m = writingDNA.metrics;
+
+    // Sentence length → intellect (elaborate writing = high intellect)
+    if (m.avgSentenceLength != null) {
+      profile.intellect = clamp(Math.max(profile.intellect, m.avgSentenceLength / 25), 0, 1);
+    }
+
+    // Type-token ratio → openness.ideas (vocabulary diversity)
+    if (m.typeTokenRatio != null) {
+      profile.openness.ideas = clamp(Math.max(profile.openness.ideas, m.typeTokenRatio * 1.5), 0, 1);
+    }
+
+    // Dialogue ratio → openness.feelings (conversational style)
+    if (m.dialogueRatio != null) {
+      profile.openness.feelings = clamp(Math.max(profile.openness.feelings, m.dialogueRatio * 2), 0, 1);
+    }
+
+    // Sentence length variance → openness.actions (stylistic range)
+    if (m.sentenceLengthVariance != null) {
+      profile.openness.actions = clamp(Math.max(profile.openness.actions, Math.min(m.sentenceLengthVariance / 200, 1)), 0, 1);
+    }
+
+    // Question frequency → openness.fantasy (exploratory thinking)
+    if (m.questionFrequency != null) {
+      profile.openness.fantasy = clamp(Math.max(profile.openness.fantasy, m.questionFrequency * 3), 0, 1);
+    }
+  }
+
+  // WritingDNA patterns → refine openness.aesthetics
+  if (writingDNA && writingDNA.patterns) {
+    const p = writingDNA.patterns;
+
+    // Rich metaphor density → high aesthetics
+    const metaphorMap = { sparse: 0.3, moderate: 0.5, rich: 0.75, saturated: 0.9 };
+    if (p.metaphorDensity && metaphorMap[p.metaphorDensity] != null) {
+      profile.openness.aesthetics = clamp(
+        Math.max(profile.openness.aesthetics, metaphorMap[p.metaphorDensity]), 0, 1
+      );
+    }
+
+    // Many influences → openness.values (broad cultural engagement)
+    if (p.influences && p.influences.length > 0) {
+      profile.openness.values = clamp(
+        Math.max(profile.openness.values, 0.4 + (p.influences.length / 8) * 0.5), 0, 1
+      );
+    }
+  }
+
   // Project DNA → strongest signal for openness facets
   if (projectDNA && projectDNA.coreIdentity) {
     const ci = projectDNA.coreIdentity;
@@ -476,8 +526,18 @@ function buildPsychometrics({ audioDNA, visualDNA, writingSamples, projectDNA } 
 /**
  * Classify a user from Starforge data
  */
-function classifyUser({ audioDNA, visualDNA, writingSamples, projectDNA } = {}) {
-  const psychometrics = buildPsychometrics({ audioDNA, visualDNA, writingSamples, projectDNA });
+function classifyUser({ audioDNA, visualDNA, writingSamples, projectDNA, writingDNA, convictionWeights } = {}) {
+  let psychometrics = buildPsychometrics({ audioDNA, visualDNA, writingSamples, projectDNA, writingDNA });
+
+  // Apply conviction weighting if provided — dimensions backed by
+  // high-conviction signals get amplified, thin signals dampen toward baseline
+  if (convictionWeights?.signalConfidence) {
+    const convictionWeightService = require('./convictionWeightService');
+    psychometrics = convictionWeightService.applyConvictionWeights(
+      psychometrics, convictionWeights.signalConfidence
+    );
+  }
+
   return classify(psychometrics);
 }
 

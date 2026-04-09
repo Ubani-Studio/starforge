@@ -169,7 +169,7 @@ const movements = [
     era_start: 1200,
     era_end: 1700,
     parent_id: null,
-    hex_palette: ['#4169E1', '#DAA520', '#DC143C', '#228B22', '#F0E68C'],
+    hex_palette: ['#4169E1', '#C5962B', '#DC143C', '#228B22', '#F0E68C'],
     cultural_context: 'Illuminated manuscript painting. Flattened perspective, jewel-like color, intricate pattern. Narratives from Shahnameh and Khamsa. Garden as paradise metaphor.',
     key_practitioners: ['Reza Abbasi', 'Kamal ud-Din Behzad', 'Sultan Muhammad'],
     keywords: ['miniature', 'illuminated', 'jewel color', 'flat perspective', 'garden', 'narrative'],
@@ -182,7 +182,7 @@ const movements = [
     era_start: 1526,
     era_end: 1857,
     parent_id: 'persian_miniature',
-    hex_palette: ['#DAA520', '#DC143C', '#1B4D3E', '#F5F0E6', '#4B0082'],
+    hex_palette: ['#D4AF37', '#DC143C', '#1B4D3E', '#F5F0E6', '#4B0082'],
     cultural_context: 'Indo-Persian court painting fusing Persian miniature tradition with Indian naturalism. Portraiture, court scenes, nature studies. Unprecedented detail in depictions of animals and plants.',
     key_practitioners: ['Abu\'l Hasan', 'Mansur', 'Bichitr', 'Govardhan'],
     keywords: ['court', 'portrait', 'naturalism', 'ornate', 'gold leaf', 'botanical'],
@@ -238,7 +238,7 @@ const movements = [
     era_start: 1920,
     era_end: 1970,
     parent_id: null,
-    hex_palette: ['#C41E3A', '#2E5E1E', '#DAA520', '#1C1C1C', '#F4A460'],
+    hex_palette: ['#C41E3A', '#2E5E1E', '#B8860B', '#1C1C1C', '#F4A460'],
     cultural_context: 'Public wall painting as revolutionary education. Indigenous heritage, class struggle, national identity. Art for the people, on the people\'s walls.',
     key_practitioners: ['Diego Rivera', 'David Alfaro Siqueiros', 'Jose Clemente Orozco'],
     keywords: ['mural', 'revolution', 'indigenous', 'public', 'monumental', 'narrative'],
@@ -294,7 +294,7 @@ const movements = [
     era_start: 1970,
     era_end: null,
     parent_id: null,
-    hex_palette: ['#8B4513', '#DAA520', '#F5F5DC', '#DC143C', '#1C1C1C'],
+    hex_palette: ['#8B4513', '#C8A951', '#F5F5DC', '#DC143C', '#1C1C1C'],
     cultural_context: 'Western Desert art movement. Dreamtime narratives encoded as dot patterns over aerial landscape views. Ancient songline maps rendered in acrylic on canvas.',
     key_practitioners: ['Emily Kame Kngwarreye', 'Clifford Possum Tjapaltjarri', 'Ronnie Tjampitjinpa'],
     keywords: ['dot', 'dreamtime', 'aerial', 'sacred', 'earth tone', 'songline'],
@@ -415,7 +415,7 @@ const movements = [
     era_start: 1970,
     era_end: null,
     parent_id: null,
-    hex_palette: ['#DAA520', '#4B0082', '#1C1C1C', '#C0C0C0', '#00CED1'],
+    hex_palette: ['#CFB53B', '#4B0082', '#1C1C1C', '#C0C0C0', '#00CED1'],
     cultural_context: 'Black speculative aesthetics merging African mythology, technology, and future visions. Gold, deep purple, chrome. Reclaiming the future as African space.',
     key_practitioners: ['Sun Ra', 'Wangechi Mutu', 'Toyin Ojih Odutola', 'Kehinde Wiley'],
     keywords: ['speculative', 'gold', 'chrome', 'mythology', 'future', 'black'],
@@ -523,6 +523,290 @@ const movements = [
     cultural_context: 'Words as visual objects. Typography is the art. Letter spacing, size, position create meaning beyond semantics. Brazilian Noigandres group pioneered globally.',
     key_practitioners: ['Augusto de Campos', 'Decio Pignatari', 'Eugen Gomringer', 'Ian Hamilton Finlay'],
     keywords: ['typography', 'spatial', 'word', 'visual', 'concrete', 'letter'],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // WESTERN FINE ART — WARM MOVEMENTS
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'impressionism',
+    name: 'Impressionism',
+    region: 'Europe',
+    country: 'France',
+    era_start: 1867,
+    era_end: 1886,
+    parent_id: null,
+    hex_palette: ['#4682B4', '#C4A132', '#8FBC8F', '#FFB6C1', '#F5F5DC'],
+    cultural_context: 'Capturing fleeting light and atmosphere. Broken brushstrokes, outdoor painting, ordinary subjects bathed in color. Rejected salon perfection for perception.',
+    key_practitioners: ['Claude Monet', 'Pierre-Auguste Renoir', 'Edgar Degas', 'Berthe Morisot'],
+    keywords: ['light', 'outdoor', 'brushstroke', 'atmosphere', 'fleeting', 'color'],
+  },
+  {
+    id: 'fauvism',
+    name: 'Fauvism',
+    region: 'Europe',
+    country: 'France',
+    era_start: 1905,
+    era_end: 1908,
+    parent_id: 'impressionism',
+    hex_palette: ['#FF4500', '#4169E1', '#FF8C00', '#228B22', '#FFD700'],
+    cultural_context: 'Wild beasts of color. Non-naturalistic, explosively saturated pigment applied directly. Color as emotion, not description. The most radical chromatic liberation in Western art.',
+    key_practitioners: ['Henri Matisse', 'Andre Derain', 'Maurice de Vlaminck', 'Raoul Dufy'],
+    keywords: ['saturated', 'wild', 'expressive', 'non-naturalistic', 'chromatic', 'liberation'],
+  },
+  {
+    id: 'art_deco',
+    name: 'Art Deco',
+    region: 'Europe / North America',
+    country: 'France / USA',
+    era_start: 1920,
+    era_end: 1939,
+    parent_id: null,
+    hex_palette: ['#DAA520', '#1B4D3E', '#F5F5DC', '#1C1C1C', '#B22222'],
+    cultural_context: 'Glamorous modernism. Geometric patterns, luxurious materials, streamlined forms. Gold, emerald, onyx. The aesthetic of machine-age optimism and cocktail hour elegance.',
+    key_practitioners: ['Tamara de Lempicka', 'Erte', 'A.M. Cassandre', 'Chrysler Building architects'],
+    keywords: ['glamour', 'geometric', 'gold', 'luxury', 'streamlined', 'machine-age'],
+  },
+  {
+    id: 'color_field',
+    name: 'Color Field Painting',
+    region: 'North America',
+    country: 'United States',
+    era_start: 1950,
+    era_end: 1970,
+    parent_id: null,
+    hex_palette: ['#8B0000', '#4B0082', '#FF6B00', '#191970', '#DAA520'],
+    cultural_context: 'Vast planes of pure color creating immersive emotional fields. Painting as environment, not image. Rothko\'s luminous rectangles, Frankenthaler\'s stained canvases.',
+    key_practitioners: ['Mark Rothko', 'Helen Frankenthaler', 'Morris Louis', 'Barnett Newman'],
+    keywords: ['immersive', 'saturated', 'field', 'emotional', 'luminous', 'vast'],
+  },
+  {
+    id: 'neo_expressionism',
+    name: 'Neo-Expressionism',
+    region: 'North America / Europe',
+    country: 'USA / Germany / Italy',
+    era_start: 1978,
+    era_end: 1990,
+    parent_id: null,
+    hex_palette: ['#4169E1', '#DC143C', '#D4A017', '#1C1C1C', '#FF69B4'],
+    cultural_context: 'Return to raw figuration and emotional intensity after Minimalism and Conceptualism. Graffiti meets gallery. Street energy on monumental canvas.',
+    key_practitioners: ['Jean-Michel Basquiat', 'Julian Schnabel', 'Anselm Kiefer', 'Georg Baselitz'],
+    keywords: ['raw', 'figuration', 'graffiti', 'monumental', 'street', 'emotional'],
+  },
+  {
+    id: 'pop_art',
+    name: 'Pop Art',
+    region: 'North America / Europe',
+    country: 'USA / United Kingdom',
+    era_start: 1956,
+    era_end: 1970,
+    parent_id: null,
+    hex_palette: ['#FF0000', '#FFD700', '#0000FF', '#FF1493', '#F5F5F5'],
+    cultural_context: 'Mass culture as high art. Advertising, comics, consumer products elevated through repetition and scale. Ironic celebration of the everyday image.',
+    key_practitioners: ['Andy Warhol', 'Roy Lichtenstein', 'David Hockney', 'Claes Oldenburg'],
+    keywords: ['mass culture', 'repetition', 'commercial', 'bold', 'ironic', 'everyday'],
+  },
+  {
+    id: 'art_nouveau',
+    name: 'Art Nouveau',
+    region: 'Europe',
+    country: 'France / Austria / Belgium',
+    era_start: 1890,
+    era_end: 1910,
+    parent_id: null,
+    hex_palette: ['#BF9B30', '#2E8B57', '#DEB887', '#F5F0E6', '#008B8B'],
+    cultural_context: 'Total art embracing all design. Organic curves inspired by natural forms. Whiplash lines, floral motifs, sensuous flowing shapes. Art in every object of daily life.',
+    key_practitioners: ['Alphonse Mucha', 'Gustav Klimt', 'Antoni Gaudi', 'Hector Guimard'],
+    keywords: ['organic', 'flowing', 'floral', 'gold', 'sensuous', 'total design'],
+  },
+  {
+    id: 'surrealism_visual',
+    name: 'Surrealism',
+    region: 'Europe',
+    country: 'France / Spain',
+    era_start: 1924,
+    era_end: 1966,
+    parent_id: null,
+    hex_palette: ['#87CEEB', '#C9B037', '#DC143C', '#4B0082', '#F5DEB3'],
+    cultural_context: 'Unlocking the unconscious through visual paradox. Dream logic, uncanny juxtaposition, melting reality. Art as psychic automatism and liberation from reason.',
+    key_practitioners: ['Salvador Dali', 'Rene Magritte', 'Remedios Varo', 'Leonora Carrington'],
+    keywords: ['dream', 'unconscious', 'paradox', 'juxtaposition', 'melting', 'uncanny'],
+  },
+  {
+    id: 'abstract_expressionism',
+    name: 'Abstract Expressionism',
+    region: 'North America',
+    country: 'United States',
+    era_start: 1943,
+    era_end: 1962,
+    parent_id: null,
+    hex_palette: ['#1C1C1C', '#F5F5F5', '#DC143C', '#FFD700', '#0047AB'],
+    cultural_context: 'Pure gesture and emotion on monumental canvas. Action painting and contemplative fields. New York replaces Paris as art capital.',
+    key_practitioners: ['Jackson Pollock', 'Willem de Kooning', 'Franz Kline', 'Lee Krasner'],
+    keywords: ['gesture', 'action', 'monumental', 'drip', 'emotional', 'spontaneous'],
+  },
+  {
+    id: 'pre_raphaelite',
+    name: 'Pre-Raphaelite Brotherhood',
+    region: 'Europe',
+    country: 'United Kingdom',
+    era_start: 1848,
+    era_end: 1900,
+    parent_id: null,
+    hex_palette: ['#006400', '#B7410E', '#DAA520', '#FFFFF0', '#DC143C'],
+    cultural_context: 'Rejecting industrial modernity for medieval intensity. Jewel-bright color, meticulous botanical detail, mythological and literary subjects. Beauty as moral force.',
+    key_practitioners: ['Dante Gabriel Rossetti', 'John Everett Millais', 'John William Waterhouse', 'Edward Burne-Jones'],
+    keywords: ['jewel', 'medieval', 'botanical', 'literary', 'detailed', 'romantic'],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // PHOTOGRAPHY
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'new_color_photography',
+    name: 'New Color Photography',
+    region: 'North America',
+    country: 'United States',
+    era_start: 1970,
+    era_end: null,
+    parent_id: null,
+    hex_palette: ['#DC143C', '#228B22', '#4682B4', '#D2B48C', '#87CEEB'],
+    cultural_context: 'Color film as serious art medium. Saturated everyday America: gas stations, diners, suburban lawns. Finding the extraordinary in the banal through pure color.',
+    key_practitioners: ['William Eggleston', 'Stephen Shore', 'Joel Meyerowitz', 'Joel Sternfeld'],
+    keywords: ['saturated', 'everyday', 'documentary', 'color film', 'banal', 'American'],
+  },
+  {
+    id: 'dramatic_fashion_photography',
+    name: 'Fashion Photography / Dramatic',
+    region: 'Europe / North America',
+    country: 'Global',
+    era_start: 1960,
+    era_end: null,
+    parent_id: null,
+    hex_palette: ['#DC143C', '#C7A938', '#1C1C1C', '#F5F5F5', '#191970'],
+    cultural_context: 'Fashion as theatre. Dramatic lighting, bold composition, provocative narrative. The body as sculptural form. Power, desire, and spectacle in controlled environments.',
+    key_practitioners: ['Helmut Newton', 'Guy Bourdin', 'Richard Avedon', 'Tim Walker'],
+    keywords: ['dramatic', 'fashion', 'theatrical', 'bold', 'provocative', 'sculptural'],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CINEMA
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'wong_kar_wai_cinema',
+    name: 'Wong Kar-wai / Saturated Cinema',
+    region: 'East Asia',
+    country: 'Hong Kong',
+    era_start: 1990,
+    era_end: null,
+    parent_id: null,
+    hex_palette: ['#DC143C', '#00CED1', '#B5942D', '#006400', '#1C1C1C'],
+    cultural_context: 'Neon-soaked melancholy. Slow-motion longing in tight corridors. Deep reds, sick greens, warm golds bleeding through celluloid. Time as texture, color as emotion.',
+    key_practitioners: ['Wong Kar-wai', 'Christopher Doyle', 'Park Chan-wook'],
+    keywords: ['neon', 'melancholy', 'saturated', 'slow', 'longing', 'atmospheric'],
+  },
+  {
+    id: 'film_noir_visual',
+    name: 'Film Noir',
+    region: 'North America / Europe',
+    country: 'USA / France',
+    era_start: 1941,
+    era_end: 1958,
+    parent_id: null,
+    hex_palette: ['#1C1C1C', '#F5F5F5', '#191970', '#B8941E', '#8B0000'],
+    cultural_context: 'Shadow as storytelling. High contrast, venetian blind stripes, rain-slicked streets. German Expressionist lighting meets American cynicism.',
+    key_practitioners: ['Billy Wilder', 'Fritz Lang', 'John Huston', 'Jacques Tourneur'],
+    keywords: ['shadow', 'contrast', 'urban', 'nocturnal', 'cynical', 'dramatic'],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // GRAPHICS + DESIGN
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'mid_century_modern_graphic',
+    name: 'Mid-Century Modern Graphics',
+    region: 'North America / Europe',
+    country: 'USA',
+    era_start: 1945,
+    era_end: 1969,
+    parent_id: null,
+    hex_palette: ['#FF6347', '#1C1C1C', '#20B2AA', '#FFFDD0', '#FF0000'],
+    cultural_context: 'Bold flat shapes, limited color palettes, maximum impact. Movie posters, corporate identity, album covers. Design as cultural force. Economy of form.',
+    key_practitioners: ['Saul Bass', 'Paul Rand', 'Charley Harper', 'Alexander Girard'],
+    keywords: ['flat', 'bold', 'poster', 'identity', 'economical', 'iconic'],
+  },
+  {
+    id: 'psychedelic_art',
+    name: 'Psychedelic Art',
+    region: 'North America / Europe',
+    country: 'USA / United Kingdom',
+    era_start: 1965,
+    era_end: 1972,
+    parent_id: null,
+    hex_palette: ['#8B008B', '#FF1493', '#32CD32', '#FF6B00', '#C5A028'],
+    cultural_context: 'Consciousness expansion made visible. Swirling forms, electric color, Art Nouveau revival through LSD lens. Concert posters as sacred objects. Purple as gateway.',
+    key_practitioners: ['Wes Wilson', 'Victor Moscoso', 'Martin Sharp', 'Peter Max'],
+    keywords: ['swirling', 'electric', 'consciousness', 'purple', 'poster', 'vibrant'],
+  },
+  {
+    id: 'soviet_constructivism',
+    name: 'Soviet Constructivism',
+    region: 'Europe',
+    country: 'Russia / USSR',
+    era_start: 1913,
+    era_end: 1935,
+    parent_id: null,
+    hex_palette: ['#CC0000', '#1C1C1C', '#F5F5F5', '#808080', '#B89626'],
+    cultural_context: 'Art in service of revolution. Geometric precision, photomontage, dynamic diagonals. The poster as weapon, the book as architecture. Utopian design for a new society.',
+    key_practitioners: ['Alexander Rodchenko', 'El Lissitzky', 'Varvara Stepanova', 'Gustav Klutsis'],
+    keywords: ['revolution', 'photomontage', 'diagonal', 'red', 'geometric', 'poster'],
+  },
+  {
+    id: 'memphis_design',
+    name: 'Memphis Design',
+    region: 'Europe',
+    country: 'Italy',
+    era_start: 1981,
+    era_end: 1987,
+    parent_id: null,
+    hex_palette: ['#FF69B4', '#00CED1', '#FFD700', '#FF6347', '#9370DB'],
+    cultural_context: 'Anti-good-taste design. Clashing colors, squiggle patterns, laminate surfaces, asymmetric forms. Postmodern rebellion against Bauhaus sobriety. Fun as ideology.',
+    key_practitioners: ['Ettore Sottsass', 'Michele De Lucchi', 'Nathalie Du Pasquier', 'George Sowden'],
+    keywords: ['clashing', 'squiggle', 'postmodern', 'playful', 'asymmetric', 'anti-taste'],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // FASHION (beyond existing Helmut Lang + Sade)
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'dark_romanticism_fashion',
+    name: 'Dark Romanticism / Avant-Garde Fashion',
+    region: 'Europe',
+    country: 'United Kingdom / Belgium / USA',
+    era_start: 1992,
+    era_end: null,
+    parent_id: null,
+    hex_palette: ['#1C1C1C', '#8B0000', '#F5F0E6', '#4A4A4A', '#C4A23C'],
+    cultural_context: 'Fashion as existential statement. Dark beauty, skeletal structures, gothic Victorian undercurrents. Luxury through rawness. Death and desire as material.',
+    key_practitioners: ['Alexander McQueen', 'Rick Owens', 'Rei Kawakubo', 'Ann Demeulemeester'],
+    keywords: ['dark', 'gothic', 'skeletal', 'romantic', 'raw', 'avant-garde'],
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // DIGITAL + CONTEMPORARY
+  // ═══════════════════════════════════════════════════════════════
+  {
+    id: 'post_internet_art',
+    name: 'Post-Internet Art',
+    region: 'Global',
+    country: 'Global',
+    era_start: 2008,
+    era_end: null,
+    parent_id: null,
+    hex_palette: ['#7B2FBE', '#00FFFF', '#FF00FF', '#1C1C1C', '#4169E1'],
+    cultural_context: 'Art made in awareness of the network. Screen aesthetics rendered physical. Neon gradients, rendering artifacts, 3D objects in white voids. Digital as natural.',
+    key_practitioners: ['Hito Steyerl', 'Amalia Ulman', 'Jon Rafman', 'Petra Cortright'],
+    keywords: ['screen', 'digital', 'neon', 'gradient', 'render', 'network'],
   },
 ];
 
@@ -633,11 +917,13 @@ function findMovementsByColor(hex, limit = 5) {
  * Match a full palette (array of hex colors) to movements
  * Returns weighted movement affinities
  */
-function matchPaletteToMovements(palette, limit = 8) {
+function matchPaletteToMovements(palette, limit = 8, boosts = {}) {
   const movementScores = {};
 
   for (const hex of palette) {
-    const matches = findMovementsByColor(hex, 3);
+    // Top 5 per color (not 3) — prevents array-order bias when
+    // many movements share similar hex codes like #DAA520
+    const matches = findMovementsByColor(hex, 5);
     for (const match of matches) {
       const id = match.movement.id;
       // Inverse distance as score (closer = higher)
@@ -648,6 +934,7 @@ function matchPaletteToMovements(palette, limit = 8) {
           totalScore: 0,
           matchCount: 0,
           matchedColors: [],
+          boosted: false,
         };
       }
       movementScores[id].totalScore += score;
@@ -657,6 +944,28 @@ function matchPaletteToMovements(palette, limit = 8) {
         movementHex: match.matchedHex,
         distance: match.distance,
       });
+    }
+  }
+
+  // Apply Project DNA boosts — references and lineage from the creator's
+  // actual projects act as high-signal amplifiers for matching movements
+  for (const [id, boost] of Object.entries(boosts)) {
+    if (movementScores[id]) {
+      movementScores[id].totalScore += boost;
+      movementScores[id].boosted = true;
+    } else {
+      // Movement not matched by color but strongly referenced in DNA —
+      // inject it with the boost as its base score
+      const movement = movements.find(m => m.id === id);
+      if (movement && boost >= 0.2) {
+        movementScores[id] = {
+          movement,
+          totalScore: boost,
+          matchCount: 0,
+          matchedColors: [],
+          boosted: true,
+        };
+      }
     }
   }
 
@@ -717,6 +1026,56 @@ function generateColorRecommendations(userPalette, topMovements) {
     .slice(0, 5);
 }
 
+/**
+ * Generate movement boosts from Project DNA.
+ * References and lineage from the creator's actual projects
+ * act as high-conviction signals — what someone builds reveals taste.
+ *
+ * @param {object} projectDna - from projectDnaService.getProjectDNA()
+ * @returns {object} - { movementId: boostScore }
+ */
+function getProjectDnaBoosts(projectDna) {
+  if (!projectDna) return {};
+
+  const boosts = {};
+  const refs = projectDna.coreIdentity?.references || [];
+  const lineage = projectDna.expansionVectors?.lineage || [];
+  const domains = projectDna.coreIdentity?.domains || [];
+  const allText = [...refs, ...lineage, ...domains].join(' ').toLowerCase();
+
+  for (const m of movements) {
+    let boost = 0;
+
+    // Check if any practitioner is directly referenced in DNA
+    for (const p of m.key_practitioners) {
+      // Match on last name (most distinctive) or full name
+      const lastName = p.toLowerCase().split(' ').pop();
+      const fullName = p.toLowerCase();
+      if (allText.includes(fullName) || (lastName.length > 3 && allText.includes(lastName))) {
+        boost += 0.3;
+      }
+    }
+
+    // Check keyword overlap between DNA text and movement keywords
+    for (const kw of m.keywords) {
+      if (kw.length > 3 && allText.includes(kw.toLowerCase())) {
+        boost += 0.05;
+      }
+    }
+
+    // Check movement name itself
+    if (allText.includes(m.name.toLowerCase())) {
+      boost += 0.25;
+    }
+
+    if (boost > 0) {
+      boosts[m.id] = Math.min(boost, 0.6); // Cap per movement
+    }
+  }
+
+  return boosts;
+}
+
 module.exports = {
   getAllMovements,
   getMovementById,
@@ -725,6 +1084,7 @@ module.exports = {
   findMovementsByColor,
   matchPaletteToMovements,
   generateColorRecommendations,
+  getProjectDnaBoosts,
   hexToLab,
   colorDistance,
 };

@@ -11,6 +11,18 @@ const { requireFeature, enforceUsageLimit, incrementUsage } = require('../middle
 
 const router = express.Router();
 
+// In-memory cache for expensive computations
+const _routeCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+function getCached(key) {
+  const entry = _routeCache.get(key);
+  if (entry && (Date.now() - entry.timestamp < CACHE_TTL)) return entry.data;
+  return null;
+}
+function setCache(key, data) {
+  _routeCache.set(key, { data, timestamp: Date.now() });
+}
+
 // Database setup
 const dbPath = path.join(__dirname, '../../starforge_audio.db');
 const db = new Database(dbPath);
@@ -1177,6 +1189,10 @@ router.get('/context/compare', requireFeature('context_comparison'), async (req,
 router.get('/taste/coherence', requireFeature('taste_coherence'), (req, res) => {
   try {
     const { context } = req.query;
+    const cacheKey = `coherence:${context || 'all'}`;
+    const cached = getCached(cacheKey);
+    if (cached) return res.json(cached);
+
     const db = new Database(dbPath);
 
     // Get tracks for specified context (or all tracks)
@@ -1186,6 +1202,7 @@ router.get('/taste/coherence', requireFeature('taste_coherence'), (req, res) => 
     } else {
       tracks = db.prepare('SELECT * FROM audio_tracks').all();
     }
+    db.close();
 
     if (tracks.length === 0) {
       return res.json({
@@ -1211,14 +1228,17 @@ router.get('/taste/coherence', requireFeature('taste_coherence'), (req, res) => 
         : 'Your taste is highly diverse - you explore many different sounds.'
     };
 
-    res.json({
+    const result = {
       success: true,
       available: true,
       trackCount: tracks.length,
       context: context || 'all',
       coherence,
       interpretation
-    });
+    };
+
+    setCache(cacheKey, result);
+    res.json(result);
   } catch (error) {
     console.error('Taste coherence error:', error);
     res.status(500).json({
