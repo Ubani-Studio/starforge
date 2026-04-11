@@ -1385,7 +1385,17 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
           label="Visual DNA"
           stat={
             hasVisualDNA
-              ? tizitaData.visualDNA?.deepAnalysis?.visualEra?.primary || tizitaData.visualDNA?.styleDescription?.split('.')[0]
+              ? (() => {
+                  // "Timeless" is a fallback that wins when metrics are balanced,
+                  // not a real aesthetic read — skip it and use secondary if it
+                  // shows up as primary.
+                  const era = tizitaData.visualDNA?.deepAnalysis?.visualEra;
+                  const primary = era?.primary;
+                  const secondary = era?.secondary;
+                  if (primary && primary !== 'Timeless') return primary;
+                  if (secondary && secondary !== 'Timeless') return secondary;
+                  return tizitaData.visualDNA?.styleDescription?.split('.')[0];
+                })()
               : null
           }
           statLabel={
@@ -1422,27 +1432,31 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                         const currentRating = colorRatings[hex] || 0;
                         const ratingLabels = ['Miss', 'Noted', 'Resonant', 'Canon', 'Ancestor'];
                         return (
-                          <div key={idx} className="flex-1">
+                          <div key={idx} className="flex-1 flex flex-col">
+                            {/* Swatch */}
                             <div
                               className="h-16 border border-brand-border"
                               style={{ backgroundColor: hex }}
                               title={color.context ? `${displayName} (${color.origin}): ${color.context}` : hex}
                             />
-                            <p className="text-body-sm text-brand-text mt-1 text-center leading-tight">
-                              {color.matched ? displayName : hex}
-                            </p>
-                            {color.origin && color.matched && (
-                              <p className="text-body-sm text-brand-secondary text-center leading-tight">
-                                {color.origin}
+                            {/* Meta block — fixed reserved height so Likert bars align across all swatches */}
+                            <div className="mt-1.5 flex flex-col" style={{ minHeight: '64px' }}>
+                              <p className="text-body-sm text-brand-text text-center leading-tight line-clamp-2">
+                                {color.matched ? displayName : hex}
                               </p>
-                            )}
-                            {pct > 0 && (
-                              <p className="text-body-sm text-brand-secondary text-center font-mono">
-                                {pct}%
-                              </p>
-                            )}
-                            {/* Likert rating bar */}
-                            <div className="flex items-center gap-px mt-1.5">
+                              {color.origin && color.matched && (
+                                <p className="text-body-xs text-brand-secondary text-center leading-tight line-clamp-1 mt-0.5">
+                                  {color.origin}
+                                </p>
+                              )}
+                              {pct > 0 && (
+                                <p className="text-body-xs text-brand-secondary text-center font-mono mt-auto pt-0.5">
+                                  {pct}%
+                                </p>
+                              )}
+                            </div>
+                            {/* Likert rating bar — always on the same baseline */}
+                            <div className="flex items-center gap-px mt-2">
                               {[1, 2, 3, 4, 5].map(val => (
                                 <button
                                   key={val}
@@ -1458,11 +1472,10 @@ const NommoPanel = ({ onTwinGenerated, onGlowChange }) => {
                                 </button>
                               ))}
                             </div>
-                            {currentRating > 0 && (
-                              <p className="text-body-xs text-brand-secondary text-center mt-0.5">
-                                {ratingLabels[currentRating - 1]}
-                              </p>
-                            )}
+                            {/* Rating label — reserved height so swatches stay aligned */}
+                            <p className="text-body-xs text-brand-secondary text-center mt-1" style={{ minHeight: '14px' }}>
+                              {currentRating > 0 ? ratingLabels[currentRating - 1] : '\u00A0'}
+                            </p>
                           </div>
                         );
                       })}

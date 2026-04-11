@@ -291,17 +291,19 @@ class TizitaDirectService {
         let stdout = '';
         let stderr = '';
 
-        // Kill after 90s to prevent zombie processes (k-means on large photos is slow)
+        // Kill after 240s. K-means on 50 large photos takes ~67s in isolation
+        // and significantly longer under concurrent server load. 90s was too
+        // tight and caused empty palettes on every refresh.
         const timeout = setTimeout(() => {
           python.kill('SIGTERM');
           try { fs.unlinkSync(tmpFile); } catch (e) {}
-          console.warn('Python visual DNA analysis timed out after 90s');
+          console.warn('Python visual DNA analysis timed out after 240s');
           resolve({
             styleDescription: this.generateSimpleStyleDescription(allPhotos),
             colorPalette: [],
             confidence: 0.5
           });
-        }, 90000);
+        }, 240000);
 
         python.stdout.on('data', (data) => {
           stdout += data.toString();
