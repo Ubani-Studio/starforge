@@ -166,11 +166,15 @@ router.delete('/sources/:userId/:id', async (req, res) => {
   }
 });
 
-// Get cached Project DNA
+// Get cached Project DNA. Pass ?state=extract to read the in-progress
+// draft; default returns wall (canonical) with extract as fallback.
 router.get('/:userId', (req, res) => {
   try {
     const userId = req.params.userId || 'default';
-    const projectDNA = projectDnaService.getProjectDNA(userId);
+    const state = req.query.state === 'extract' ? 'extract'
+      : req.query.state === 'wall' ? 'wall'
+      : null;
+    const projectDNA = projectDnaService.getProjectDNA(userId, state);
 
     if (!projectDNA) {
       return res.status(404).json({
@@ -182,6 +186,7 @@ router.get('/:userId', (req, res) => {
     res.json({
       success: true,
       projectDNA,
+      state: state ?? 'auto',
     });
   } catch (error) {
     console.error('[Project DNA] Get failed:', error.message);
@@ -189,6 +194,34 @@ router.get('/:userId', (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+});
+
+// ─── Extract / Wall state lifecycle ───────────────────────────────────────
+
+// Pending-commit status. Used by the UI to show "Save to Wall" affordance.
+router.get('/:userId/pending', (req, res) => {
+  try {
+    const userId = req.params.userId || 'default';
+    const status = projectDnaService.hasPendingExtract(userId);
+    res.json({ success: true, ...status });
+  } catch (error) {
+    console.error('[Project DNA] Pending check failed:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Promote the current extract row to wall. Snapshots the old wall into
+// project_dna_revisions so the user can roll back.
+router.post('/:userId/save-to-wall', (req, res) => {
+  try {
+    const userId = req.params.userId || 'default';
+    const note = typeof req.body?.note === 'string' ? req.body.note : null;
+    const result = projectDnaService.saveExtractToWall(userId, note);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('[Project DNA] Save to wall failed:', error.message);
+    res.status(400).json({ success: false, error: error.message });
   }
 });
 

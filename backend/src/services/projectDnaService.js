@@ -97,6 +97,34 @@ function getDb() {
       sources_scanned INTEGER DEFAULT 0
     );
 
+    -- One-time migration to split canonical ("wall") vs draft ("extract").
+    -- Existing rows become the wall (canonical); extract rows are written
+    -- by scan and only promoted to wall on explicit save.
+  `);
+
+  // Migrate project_dna to composite (user_id, state) PK if we're still on the
+  // legacy single-column schema. Idempotent: detected via PRAGMA table_info.
+  const cols = db.prepare("PRAGMA table_info(project_dna)").all();
+  const hasState = cols.some((c) => c.name === 'state');
+  if (!hasState) {
+    db.exec(`
+      CREATE TABLE project_dna_new (
+        user_id TEXT NOT NULL,
+        state   TEXT NOT NULL DEFAULT 'wall',
+        dna_json TEXT NOT NULL,
+        scanned_at TEXT NOT NULL,
+        sources_scanned INTEGER DEFAULT 0,
+        PRIMARY KEY (user_id, state)
+      );
+      INSERT INTO project_dna_new (user_id, state, dna_json, scanned_at, sources_scanned)
+        SELECT user_id, 'wall', dna_json, scanned_at, sources_scanned FROM project_dna;
+      DROP TABLE project_dna;
+      ALTER TABLE project_dna_new RENAME TO project_dna;
+    `);
+  }
+
+  db.exec(`
+
     -- Append-only audit log of changes to a user's Project DNA.
     -- Every revise call writes one row here before mutating project_dna,
     -- so terminology drift (StanVault → Imprint, conviction → belief) is
@@ -294,9 +322,12 @@ function reviseProjectDNA(userId, args) {
   const db = getDb();
   try {
     const tx = db.transaction(() => {
-      const row = db.prepare('SELECT dna_json FROM project_dna WHERE user_id = ?').get(userId);
+      // Revise operates on the WALL (canonical). Extract is scan-driven;
+      // we wouldn't want a rename applied to extract to be silently undone
+      // the next time the corpus rescans.
+      const row = db.prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'").get(userId);
       const prevDna = row ? JSON.parse(row.dna_json) : {};
-      const nextDna = mutator(JSON.parse(JSON.stringify(prevDna))); // deep-cloned so mutator can mutate safely
+      const nextDna = mutator(JSON.parse(JSON.stringify(prevDna)));
       const revised = new Date().toISOString();
 
       const info = db.prepare(`
@@ -313,8 +344,8 @@ function reviseProjectDNA(userId, args) {
       );
 
       db.prepare(`
-        INSERT OR REPLACE INTO project_dna (user_id, dna_json, scanned_at, sources_scanned)
-        VALUES (?, ?, ?, COALESCE((SELECT sources_scanned FROM project_dna WHERE user_id = ?), 0))
+        INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
+        VALUES (?, 'wall', ?, ?, COALESCE((SELECT sources_scanned FROM project_dna WHERE user_id = ? AND state = 'wall'), 0))
       `).run(userId, JSON.stringify(nextDna), revised, userId);
 
       return { dna: nextDna, revisionId: info.lastInsertRowid };
@@ -364,8 +395,8 @@ function renameByPath(userId, path, to, evidence, source) {
   const db = getDb();
   try {
     const tx = db.transaction(() => {
-      const row = db.prepare('SELECT dna_json FROM project_dna WHERE user_id = ?').get(userId);
-      if (!row) throw new Error(`No project_dna for user ${userId}`);
+      const row = db.prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'").get(userId);
+      if (!row) throw new Error(`No project_dna wall for user ${userId}`);
       const prevDna = JSON.parse(row.dna_json);
       const nextDna = JSON.parse(JSON.stringify(prevDna));
       const { from } = setByPath(nextDna, path, to);
@@ -384,8 +415,8 @@ function renameByPath(userId, path, to, evidence, source) {
       );
 
       db.prepare(`
-        INSERT OR REPLACE INTO project_dna (user_id, dna_json, scanned_at, sources_scanned)
-        VALUES (?, ?, ?, COALESCE((SELECT sources_scanned FROM project_dna WHERE user_id = ?), 0))
+        INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
+        VALUES (?, 'wall', ?, ?, COALESCE((SELECT sources_scanned FROM project_dna WHERE user_id = ? AND state = 'wall'), 0))
       `).run(userId, JSON.stringify(nextDna), revised, userId);
 
       return { dna: nextDna, revisionId: info.lastInsertRowid, from };
@@ -476,31 +507,129 @@ async function scanProjectDNA() {
 
 async function scanAndSave(userId = 'default') {
   const projectDNA = await scanProjectDNA();
-
-  const db = getDb();
-  db.prepare(`
-    INSERT OR REPLACE INTO project_dna (user_id, dna_json, scanned_at, sources_scanned)
-    VALUES (?, ?, ?, ?)
-  `).run(
-    userId,
-    JSON.stringify(projectDNA),
-    projectDNA.scannedAt,
-    projectDNA.sourcesScanned.length
-  );
-  db.close();
-
+  writeExtractAndBootstrapWall(userId, projectDNA, projectDNA.sourcesScanned.length);
   return projectDNA;
 }
 
-function getProjectDNA(userId = 'default') {
+/**
+ * Shared write-path for every scan result. Writes to state='extract' and,
+ * if no wall exists yet for this user, also bootstraps the wall so
+ * downstream readers see something immediately. Subsequent scans only
+ * touch extract; promotion to wall is explicit via saveExtractToWall.
+ */
+function writeExtractAndBootstrapWall(userId, projectDNA, corpusSize) {
+  const db = getDb();
+  try {
+    const dnaJson = JSON.stringify(projectDNA);
+    const scannedAt = projectDNA.scannedAt ?? new Date().toISOString();
+
+    db.prepare(
+      `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
+       VALUES (?, 'extract', ?, ?, ?)`,
+    ).run(userId, dnaJson, scannedAt, corpusSize);
+
+    const wall = db
+      .prepare("SELECT 1 as ok FROM project_dna WHERE user_id = ? AND state = 'wall'")
+      .get(userId);
+    if (!wall) {
+      db.prepare(
+        `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
+         VALUES (?, 'wall', ?, ?, ?)`,
+      ).run(userId, dnaJson, scannedAt, corpusSize);
+    }
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Read Project DNA. Default is the canonical 'wall'; pass state='extract'
+ * for the in-progress draft. When no state given, prefer wall, fall back
+ * to extract (so first-time users whose extract hasn't been promoted yet
+ * still get something).
+ */
+function getProjectDNA(userId = 'default', state = null) {
   try {
     const db = getDb();
-    const row = db.prepare('SELECT dna_json FROM project_dna WHERE user_id = ?').get(userId);
+    let row;
+    if (state === 'extract' || state === 'wall') {
+      row = db.prepare('SELECT dna_json FROM project_dna WHERE user_id = ? AND state = ?').get(userId, state);
+    } else {
+      row = db.prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'").get(userId)
+        ?? db.prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'extract'").get(userId);
+    }
     db.close();
     if (!row) return null;
     return JSON.parse(row.dna_json);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Whether the user has a distinct extract that has NOT yet been promoted
+ * to wall. Used to surface "Save to Wall" pending state in the UI.
+ */
+function hasPendingExtract(userId = 'default') {
+  const db = getDb();
+  try {
+    const ex = db.prepare("SELECT scanned_at, dna_json FROM project_dna WHERE user_id = ? AND state = 'extract'").get(userId);
+    if (!ex) return { pending: false };
+    const wall = db.prepare("SELECT scanned_at, dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'").get(userId);
+    if (!wall) return { pending: true, reason: 'no_wall_yet', extractScannedAt: ex.scanned_at };
+    const diff = wall.dna_json !== ex.dna_json;
+    return {
+      pending: diff,
+      reason: diff ? 'extract_newer_than_wall' : 'in_sync',
+      extractScannedAt: ex.scanned_at,
+      wallScannedAt: wall.scanned_at,
+    };
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Promote the current extract row to wall. The old wall (if any) is
+ * snapshotted to project_dna_revisions with kind='wall_save' so the user
+ * can see what changed and roll back if needed.
+ */
+function saveExtractToWall(userId, note = null) {
+  const db = getDb();
+  try {
+    const extract = db
+      .prepare("SELECT * FROM project_dna WHERE user_id = ? AND state = 'extract'")
+      .get(userId);
+    if (!extract) throw new Error('No extract to save');
+
+    const oldWall = db
+      .prepare("SELECT * FROM project_dna WHERE user_id = ? AND state = 'wall'")
+      .get(userId);
+
+    const revisedAt = new Date().toISOString();
+
+    if (oldWall?.dna_json) {
+      db.prepare(
+        `INSERT INTO project_dna_revisions
+          (user_id, revised_at, kind, change_json, evidence, source, prev_dna)
+         VALUES (?, ?, 'wall_save', ?, ?, 'user', ?)`,
+      ).run(
+        userId,
+        revisedAt,
+        JSON.stringify({ reason: 'save extract to wall', prevScannedAt: oldWall.scanned_at }),
+        note,
+        oldWall.dna_json,
+      );
+    }
+
+    db.prepare(
+      `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
+       VALUES (?, 'wall', ?, ?, ?)`,
+    ).run(userId, extract.dna_json, extract.scanned_at, extract.sources_scanned);
+
+    return { promoted: true, promotedAt: revisedAt, wasBootstrap: !oldWall };
+  } finally {
+    db.close();
   }
 }
 
@@ -728,17 +857,18 @@ async function scanUploadedAndSave(userId, files, direction) {
   // 3. Re-extract identity against the full corpus + direction.
   const projectDNA = await scanFromUploadedFiles(corpus, direction);
 
+  // 4. Snapshot the prior EXTRACT before overwriting (wall is not
+  //    touched here; user must explicitly Save to Wall to promote).
   const db = getDb();
   try {
-    // 4. Snapshot prior DNA before overwriting so nothing is silently lost.
-    const prior = db
-      .prepare('SELECT dna_json FROM project_dna WHERE user_id = ?')
+    const priorExtract = db
+      .prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'extract'")
       .get(userId);
-    if (prior?.dna_json) {
+    if (priorExtract?.dna_json) {
       db.prepare(
         `INSERT INTO project_dna_revisions
           (user_id, revised_at, kind, change_json, evidence, source, prev_dna)
-         VALUES (?, ?, 'scan', ?, ?, 'upload', ?)`,
+         VALUES (?, ?, 'extract_update', ?, ?, 'upload', ?)`,
       ).run(
         userId,
         projectDNA.scannedAt,
@@ -748,17 +878,15 @@ async function scanUploadedAndSave(userId, files, direction) {
           corpusSize: corpus.length,
         }),
         direction || null,
-        prior.dna_json,
+        priorExtract.dna_json,
       );
     }
-
-    db.prepare(`
-      INSERT OR REPLACE INTO project_dna (user_id, dna_json, scanned_at, sources_scanned)
-      VALUES (?, ?, ?, ?)
-    `).run(userId, JSON.stringify(projectDNA), projectDNA.scannedAt, corpus.length);
   } finally {
     db.close();
   }
+
+  // 5. Write to extract. If no wall exists yet, bootstrap it too.
+  writeExtractAndBootstrapWall(userId, projectDNA, corpus.length);
 
   return {
     ...projectDNA,
@@ -778,23 +906,24 @@ async function removeSourceAndRescan(userId, sourceId) {
 
   const corpus = await loadAllSources(userId);
   if (corpus.length === 0) {
-    // Corpus went to zero. Archive the prior DNA and clear the live row.
+    // Corpus went to zero. Archive both extract and wall, then clear both.
     const db = getDb();
     try {
-      const prior = db
-        .prepare('SELECT dna_json FROM project_dna WHERE user_id = ?')
-        .get(userId);
-      if (prior?.dna_json) {
+      const rows = db
+        .prepare("SELECT state, dna_json FROM project_dna WHERE user_id = ?")
+        .all(userId);
+      for (const r of rows) {
         db.prepare(
           `INSERT INTO project_dna_revisions
             (user_id, revised_at, kind, change_json, evidence, source, prev_dna)
-           VALUES (?, ?, 'scan', ?, ?, 'source_removed', ?)`,
+           VALUES (?, ?, ?, ?, ?, 'source_removed', ?)`,
         ).run(
           userId,
           new Date().toISOString(),
+          r.state === 'wall' ? 'wall_cleared' : 'extract_cleared',
           JSON.stringify({ reason: 'final source removed', removedFilename: res.filename }),
           null,
-          prior.dna_json,
+          r.dna_json,
         );
       }
       db.prepare('DELETE FROM project_dna WHERE user_id = ?').run(userId);
@@ -806,16 +935,18 @@ async function removeSourceAndRescan(userId, sourceId) {
 
   const projectDNA = await scanFromUploadedFiles(corpus, '');
 
+  // Snapshot prior extract before the rescan overwrites it. Wall is not
+  // touched here; removing a source only updates the extract draft.
   const db = getDb();
   try {
-    const prior = db
-      .prepare('SELECT dna_json FROM project_dna WHERE user_id = ?')
+    const priorExtract = db
+      .prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'extract'")
       .get(userId);
-    if (prior?.dna_json) {
+    if (priorExtract?.dna_json) {
       db.prepare(
         `INSERT INTO project_dna_revisions
           (user_id, revised_at, kind, change_json, evidence, source, prev_dna)
-         VALUES (?, ?, 'scan', ?, ?, 'source_removed', ?)`,
+         VALUES (?, ?, 'extract_update', ?, ?, 'source_removed', ?)`,
       ).run(
         userId,
         projectDNA.scannedAt,
@@ -825,16 +956,14 @@ async function removeSourceAndRescan(userId, sourceId) {
           corpusSize: corpus.length,
         }),
         null,
-        prior.dna_json,
+        priorExtract.dna_json,
       );
     }
-    db.prepare(`
-      INSERT OR REPLACE INTO project_dna (user_id, dna_json, scanned_at, sources_scanned)
-      VALUES (?, ?, ?, ?)
-    `).run(userId, JSON.stringify(projectDNA), projectDNA.scannedAt, corpus.length);
   } finally {
     db.close();
   }
+
+  writeExtractAndBootstrapWall(userId, projectDNA, corpus.length);
 
   return { removed: true, corpusSize: corpus.length, rescanned: true, dna: projectDNA };
 }
@@ -846,12 +975,7 @@ async function scanDirectoryAndSave(userId, dirPath) {
   const projectDNA = await scanDirectory(dirPath);
 
   const db = getDb();
-  db.prepare(`
-    INSERT OR REPLACE INTO project_dna (user_id, dna_json, scanned_at, sources_scanned)
-    VALUES (?, ?, ?, ?)
-  `).run(userId, JSON.stringify(projectDNA), projectDNA.scannedAt, projectDNA.sourcesScanned.length);
-  db.close();
-
+  writeExtractAndBootstrapWall(userId, projectDNA, projectDNA.sourcesScanned.length);
   return projectDNA;
 }
 
@@ -864,6 +988,10 @@ module.exports = {
   scanDirectory,
   scanUploadedAndSave,
   scanDirectoryAndSave,
+  // Extract / Wall state lifecycle
+  hasPendingExtract,
+  saveExtractToWall,
+  writeExtractAndBootstrapWall,
   // Revision log + feedback API
   reviseProjectDNA,
   listRevisions,
