@@ -185,7 +185,20 @@ const ProjectDNAPanel = ({ embedded = false, onScanComplete, userId = 'default' 
     try {
       const res = await axios.post(`/api/project-dna/${userId}/save-to-wall`, {});
       if (res.data.success) {
-        setToast(res.data.wasBootstrap ? 'Wall initialised.' : 'Extract saved to Wall. Old wall archived in revisions.');
+        if (res.data.wasBootstrap) {
+          setToast('Wall initialised.');
+        } else {
+          const e = res.data.editsReplayed || {};
+          const count = (e.scalars || 0) + (e.adds || 0) + (e.removes || 0);
+          if (count > 0) {
+            setToast(
+              `Extract saved to Wall. ${count} user edit${count === 1 ? '' : 's'} carried forward ` +
+              `(${e.scalars || 0} scalar, ${e.adds || 0} added, ${e.removes || 0} removed). Old wall archived.`
+            );
+          } else {
+            setToast('Extract saved to Wall. Old wall archived in revisions.');
+          }
+        }
         await fetchDna();
       } else {
         setError(res.data.error || 'Save failed');
@@ -430,6 +443,11 @@ const ProjectDNAPanel = ({ embedded = false, onScanComplete, userId = 'default' 
                       {pending.reason === 'no_wall_yet'
                         ? 'No wall yet. Save this extract to make it canonical.'
                         : 'The extract is newer than the wall. Save to Wall to promote it.'}
+                      {pending.wallEdited && pending.reason !== 'no_wall_yet' && (
+                        <span className="block text-brand-secondary mt-1">
+                          Your wall has edits since the last promotion. They will be replayed on top of the new extract automatically.
+                        </span>
+                      )}
                     </p>
                   </div>
                   <button

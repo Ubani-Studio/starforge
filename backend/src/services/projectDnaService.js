@@ -123,6 +123,23 @@ function getDb() {
     `);
   }
 
+  // Add baseline_dna_json column for merge-on-promote. Baseline is what
+  // the extract looked like the moment it was last promoted to wall. Any
+  // divergence between wall and baseline is a user edit; on the next
+  // save-to-wall we replay those edits on top of the new extract so user
+  // edits carry forward instead of being overwritten.
+  //
+  // Idempotent: detected via PRAGMA.
+  const cols2 = db.prepare("PRAGMA table_info(project_dna)").all();
+  const hasBaseline = cols2.some((c) => c.name === 'baseline_dna_json');
+  if (!hasBaseline) {
+    db.exec(`
+      ALTER TABLE project_dna ADD COLUMN baseline_dna_json TEXT;
+      UPDATE project_dna SET baseline_dna_json = dna_json WHERE state = 'wall' AND baseline_dna_json IS NULL;
+      UPDATE project_dna SET baseline_dna_json = dna_json WHERE state = 'extract' AND baseline_dna_json IS NULL;
+    `);
+  }
+
   db.exec(`
 
     -- Append-only audit log of changes to a user's Project DNA.
@@ -325,7 +342,9 @@ function reviseProjectDNA(userId, args) {
       // Revise operates on the WALL (canonical). Extract is scan-driven;
       // we wouldn't want a rename applied to extract to be silently undone
       // the next time the corpus rescans.
-      const row = db.prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'").get(userId);
+      const row = db
+        .prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'")
+        .get(userId);
       const prevDna = row ? JSON.parse(row.dna_json) : {};
       const nextDna = mutator(JSON.parse(JSON.stringify(prevDna)));
       const revised = new Date().toISOString();
@@ -343,10 +362,23 @@ function reviseProjectDNA(userId, args) {
         JSON.stringify(prevDna)
       );
 
-      db.prepare(`
-        INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
-        VALUES (?, 'wall', ?, ?, COALESCE((SELECT sources_scanned FROM project_dna WHERE user_id = ? AND state = 'wall'), 0))
-      `).run(userId, JSON.stringify(nextDna), revised, userId);
+      // UPDATE only touches listed columns, so baseline_dna_json is preserved.
+      // Using INSERT OR REPLACE here would wipe baseline to NULL and break
+      // the merge-on-promote path. If the wall row doesn't exist, we fall
+      // back to an INSERT that explicitly sets baseline to the new dna
+      // (bootstrap case: this is the first time the wall is populated via
+      // revise, which shouldn't normally happen but is handled safely).
+      const upd = db.prepare(`
+        UPDATE project_dna
+           SET dna_json = ?, scanned_at = ?
+         WHERE user_id = ? AND state = 'wall'
+      `).run(JSON.stringify(nextDna), revised, userId);
+      if (upd.changes === 0) {
+        db.prepare(`
+          INSERT INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned, baseline_dna_json)
+          VALUES (?, 'wall', ?, ?, 0, ?)
+        `).run(userId, JSON.stringify(nextDna), revised, JSON.stringify(nextDna));
+      }
 
       return { dna: nextDna, revisionId: info.lastInsertRowid };
     });
@@ -395,7 +427,9 @@ function renameByPath(userId, path, to, evidence, source) {
   const db = getDb();
   try {
     const tx = db.transaction(() => {
-      const row = db.prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'").get(userId);
+      const row = db
+        .prepare("SELECT dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'")
+        .get(userId);
       if (!row) throw new Error(`No project_dna wall for user ${userId}`);
       const prevDna = JSON.parse(row.dna_json);
       const nextDna = JSON.parse(JSON.stringify(prevDna));
@@ -414,10 +448,13 @@ function renameByPath(userId, path, to, evidence, source) {
         JSON.stringify(prevDna)
       );
 
+      // UPDATE preserves baseline_dna_json so merge-on-promote can still
+      // detect this as a user edit at the next save-to-wall.
       db.prepare(`
-        INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
-        VALUES (?, 'wall', ?, ?, COALESCE((SELECT sources_scanned FROM project_dna WHERE user_id = ? AND state = 'wall'), 0))
-      `).run(userId, JSON.stringify(nextDna), revised, userId);
+        UPDATE project_dna
+           SET dna_json = ?, scanned_at = ?
+         WHERE user_id = ? AND state = 'wall'
+      `).run(JSON.stringify(nextDna), revised, userId);
 
       return { dna: nextDna, revisionId: info.lastInsertRowid, from };
     });
@@ -516,6 +553,12 @@ async function scanAndSave(userId = 'default') {
  * if no wall exists yet for this user, also bootstraps the wall so
  * downstream readers see something immediately. Subsequent scans only
  * touch extract; promotion to wall is explicit via saveExtractToWall.
+ *
+ * On bootstrap the wall baseline is set to the same DNA as the wall
+ * itself, representing "no user edits yet." On subsequent scans the
+ * extract row's baseline is also kept in sync with its own dna_json
+ * (the baseline concept is only load-bearing on the wall row, but
+ * populating it on extract keeps downstream readers consistent).
  */
 function writeExtractAndBootstrapWall(userId, projectDNA, corpusSize) {
   const db = getDb();
@@ -524,22 +567,112 @@ function writeExtractAndBootstrapWall(userId, projectDNA, corpusSize) {
     const scannedAt = projectDNA.scannedAt ?? new Date().toISOString();
 
     db.prepare(
-      `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
-       VALUES (?, 'extract', ?, ?, ?)`,
-    ).run(userId, dnaJson, scannedAt, corpusSize);
+      `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned, baseline_dna_json)
+       VALUES (?, 'extract', ?, ?, ?, ?)`,
+    ).run(userId, dnaJson, scannedAt, corpusSize, dnaJson);
 
     const wall = db
       .prepare("SELECT 1 as ok FROM project_dna WHERE user_id = ? AND state = 'wall'")
       .get(userId);
     if (!wall) {
       db.prepare(
-        `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
-         VALUES (?, 'wall', ?, ?, ?)`,
-      ).run(userId, dnaJson, scannedAt, corpusSize);
+        `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned, baseline_dna_json)
+         VALUES (?, 'wall', ?, ?, ?, ?)`,
+      ).run(userId, dnaJson, scannedAt, corpusSize, dnaJson);
     }
   } finally {
     db.close();
   }
+}
+
+/**
+ * Merge user edits from the current wall onto a new extract. The "user
+ * edits" are whatever the current wall has that the baseline does not
+ * (where baseline = the extract at the last time save-to-wall was
+ * pressed). For each edit we know whether it was a scalar change, an
+ * array add, or an array remove, and we replay those on the new extract.
+ *
+ * Fields covered (the ones surfaced in the UI):
+ *   - coreIdentity.thesis                (scalar)
+ *   - tone.register                      (scalar)
+ *   - coreIdentity.domains               (array-of-strings)
+ *   - coreIdentity.tools                 (array-of-strings)
+ *   - coreIdentity.antiTaste             (array-of-strings)
+ *   - expansionVectors.gaps              (array-of-strings)
+ *
+ * Returns: { merged, editsReplayed: { scalars, adds, removes } }
+ *
+ * Fields outside the covered set take the new extract's value as-is.
+ */
+function mergeWallEditsOntoExtract(newExtract, currentWall, baseline) {
+  const merged = JSON.parse(JSON.stringify(newExtract || {}));
+  const wall = currentWall || {};
+  const base = baseline || {};
+  let scalars = 0;
+  let adds = 0;
+  let removes = 0;
+
+  const scalarSpecs = [
+    ['coreIdentity', 'thesis'],
+    ['tone', 'register'],
+  ];
+  for (const [parent, key] of scalarSpecs) {
+    const w = wall?.[parent]?.[key];
+    const b = base?.[parent]?.[key];
+    if (w !== undefined && w !== b) {
+      if (!merged[parent]) merged[parent] = {};
+      merged[parent][key] = w;
+      scalars += 1;
+    }
+  }
+
+  const arraySpecs = [
+    ['coreIdentity', 'domains'],
+    ['coreIdentity', 'tools'],
+    ['coreIdentity', 'antiTaste'],
+    ['expansionVectors', 'gaps'],
+  ];
+  for (const [parent, key] of arraySpecs) {
+    const wArr = Array.isArray(wall?.[parent]?.[key]) ? wall[parent][key] : [];
+    const bArr = Array.isArray(base?.[parent]?.[key]) ? base[parent][key] : [];
+    const eArr = Array.isArray(merged?.[parent]?.[key]) ? merged[parent][key] : [];
+
+    const bKeys = new Set(bArr.map((x) => typeof x === 'string' ? x : JSON.stringify(x)));
+    const wKeys = new Set(wArr.map((x) => typeof x === 'string' ? x : JSON.stringify(x)));
+
+    const userRemoved = bArr.filter((x) => {
+      const k = typeof x === 'string' ? x : JSON.stringify(x);
+      return !wKeys.has(k);
+    });
+    const userRemovedKeys = new Set(userRemoved.map((x) => typeof x === 'string' ? x : JSON.stringify(x)));
+
+    const userAdded = wArr.filter((x) => {
+      const k = typeof x === 'string' ? x : JSON.stringify(x);
+      return !bKeys.has(k);
+    });
+
+    // Start from extract, drop anything user removed, then append user-added
+    // items that aren't already present. Preserves extract ordering for
+    // items the extractor still surfaces; user-adds land at the end.
+    const result = eArr.filter((x) => {
+      const k = typeof x === 'string' ? x : JSON.stringify(x);
+      return !userRemovedKeys.has(k);
+    });
+    removes += userRemoved.length;
+    for (const item of userAdded) {
+      const k = typeof item === 'string' ? item : JSON.stringify(item);
+      const present = result.some((x) => (typeof x === 'string' ? x : JSON.stringify(x)) === k);
+      if (!present) {
+        result.push(item);
+        adds += 1;
+      }
+    }
+
+    if (!merged[parent]) merged[parent] = {};
+    merged[parent][key] = result;
+  }
+
+  return { merged, editsReplayed: { scalars, adds, removes } };
 }
 
 /**
@@ -568,21 +701,36 @@ function getProjectDNA(userId = 'default', state = null) {
 
 /**
  * Whether the user has a distinct extract that has NOT yet been promoted
- * to wall. Used to surface "Save to Wall" pending state in the UI.
+ * to wall, AND whether the current wall has user edits that haven't been
+ * reconciled with the baseline. Used to surface save-to-wall state and
+ * the "wall has pending edits" banner in the UI.
  */
 function hasPendingExtract(userId = 'default') {
   const db = getDb();
   try {
-    const ex = db.prepare("SELECT scanned_at, dna_json FROM project_dna WHERE user_id = ? AND state = 'extract'").get(userId);
-    if (!ex) return { pending: false };
-    const wall = db.prepare("SELECT scanned_at, dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'").get(userId);
-    if (!wall) return { pending: true, reason: 'no_wall_yet', extractScannedAt: ex.scanned_at };
-    const diff = wall.dna_json !== ex.dna_json;
+    const ex = db
+      .prepare("SELECT scanned_at, dna_json FROM project_dna WHERE user_id = ? AND state = 'extract'")
+      .get(userId);
+    if (!ex) return { pending: false, wallEdited: false };
+    const wall = db
+      .prepare("SELECT scanned_at, dna_json, baseline_dna_json FROM project_dna WHERE user_id = ? AND state = 'wall'")
+      .get(userId);
+    if (!wall) {
+      return {
+        pending: true,
+        reason: 'no_wall_yet',
+        extractScannedAt: ex.scanned_at,
+        wallEdited: false,
+      };
+    }
+    const extractChanged = wall.dna_json !== ex.dna_json;
+    const wallEdited = !!wall.baseline_dna_json && wall.dna_json !== wall.baseline_dna_json;
     return {
-      pending: diff,
-      reason: diff ? 'extract_newer_than_wall' : 'in_sync',
+      pending: extractChanged,
+      reason: extractChanged ? 'extract_newer_than_wall' : 'in_sync',
       extractScannedAt: ex.scanned_at,
       wallScannedAt: wall.scanned_at,
+      wallEdited,
     };
   } finally {
     db.close();
@@ -590,9 +738,14 @@ function hasPendingExtract(userId = 'default') {
 }
 
 /**
- * Promote the current extract row to wall. The old wall (if any) is
- * snapshotted to project_dna_revisions with kind='wall_save' so the user
- * can see what changed and roll back if needed.
+ * Promote the current extract row to wall. User edits on the wall
+ * (anywhere the wall differs from its baseline) are replayed onto the
+ * new extract so they carry forward. Old wall is snapshotted to
+ * project_dna_revisions with kind='wall_save' for rollback.
+ *
+ * After promotion, the new baseline is set to the new extract itself:
+ * any subsequent wall edits drift from that baseline, and the next
+ * promotion merges them forward too.
  */
 function saveExtractToWall(userId, note = null) {
   const db = getDb();
@@ -608,7 +761,26 @@ function saveExtractToWall(userId, note = null) {
 
     const revisedAt = new Date().toISOString();
 
+    let wallDna = extract.dna_json;
+    let editsReplayed = { scalars: 0, adds: 0, removes: 0 };
+
     if (oldWall?.dna_json) {
+      const extractJson = (() => { try { return JSON.parse(extract.dna_json); } catch { return null; } })();
+      const wallJson = (() => { try { return JSON.parse(oldWall.dna_json); } catch { return null; } })();
+      const baselineJson = (() => {
+        try {
+          return JSON.parse(oldWall.baseline_dna_json || oldWall.dna_json);
+        } catch {
+          return null;
+        }
+      })();
+
+      if (extractJson && wallJson && baselineJson) {
+        const mergeResult = mergeWallEditsOntoExtract(extractJson, wallJson, baselineJson);
+        wallDna = JSON.stringify(mergeResult.merged);
+        editsReplayed = mergeResult.editsReplayed;
+      }
+
       db.prepare(
         `INSERT INTO project_dna_revisions
           (user_id, revised_at, kind, change_json, evidence, source, prev_dna)
@@ -616,18 +788,28 @@ function saveExtractToWall(userId, note = null) {
       ).run(
         userId,
         revisedAt,
-        JSON.stringify({ reason: 'save extract to wall', prevScannedAt: oldWall.scanned_at }),
+        JSON.stringify({
+          reason: 'save extract to wall',
+          prevScannedAt: oldWall.scanned_at,
+          editsReplayed,
+        }),
         note,
         oldWall.dna_json,
       );
     }
 
     db.prepare(
-      `INSERT OR REPLACE INTO project_dna (user_id, state, dna_json, scanned_at, sources_scanned)
-       VALUES (?, 'wall', ?, ?, ?)`,
-    ).run(userId, extract.dna_json, extract.scanned_at, extract.sources_scanned);
+      `INSERT OR REPLACE INTO project_dna
+        (user_id, state, dna_json, scanned_at, sources_scanned, baseline_dna_json)
+       VALUES (?, 'wall', ?, ?, ?, ?)`,
+    ).run(userId, wallDna, extract.scanned_at, extract.sources_scanned, extract.dna_json);
 
-    return { promoted: true, promotedAt: revisedAt, wasBootstrap: !oldWall };
+    return {
+      promoted: true,
+      promotedAt: revisedAt,
+      wasBootstrap: !oldWall,
+      editsReplayed,
+    };
   } finally {
     db.close();
   }
