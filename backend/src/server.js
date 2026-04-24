@@ -517,6 +517,16 @@ app.use('/api/identity', identityRoutes);
 const relationalRoutes = require('./routes/relational');
 app.use('/api/relational', relationalRoutes);
 
+// ========================================
+// ROUNDS (RESONANCE SIGNAL)
+// Pipeline prompt §15 — the ecosystem API Qualn, Slayt, and Ibis
+// all consult when surfacing "moments that resonate right now".
+// Downstream apps POST /api/rounds/score with anchors + resonance;
+// they then GET /api/rounds/:userId?project=X to rank.
+// ========================================
+const roundsRoutes = require('./routes/rounds');
+app.use('/api/rounds', roundsRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
